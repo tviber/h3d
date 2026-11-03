@@ -1,0 +1,133 @@
+{
+  "experiments": [
+    {
+      "id": "single-elbow",
+      "label": "肘关节：肱二头肌 / 肱三头肌",
+      "model": "../models/muscle_elbow.xml",
+      "duration": 0.85,
+      "initialPoseRad": { "elbow_flex": 0.55 },
+      "muscles": [
+        { "name": "biceps", "tendon": "biceps", "maxIsometricForce": 700, "optimalFiberLength": 0.12, "tendonSlackLength": 0.042, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "triceps", "tendon": "triceps", "maxIsometricForce": 850, "optimalFiberLength": 0.12, "tendonSlackLength": 0.042, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 }
+      ],
+      "controllers": [
+        { "muscle": "biceps", "baseline": 0.02, "pulses": [{ "muscle": "biceps", "level": 0.65, "start": 0.08, "duration": 0.38, "riseTime": 0.08 }] },
+        { "muscle": "triceps", "baseline": 0.02, "pulses": [{ "muscle": "triceps", "level": 0.34, "start": 0.43, "duration": 0.28, "riseTime": 0.07 }] }
+      ],
+      "rig": { "kind": "elbow" }
+    },
+    {
+      "id": "shoulder-elbow",
+      "label": "肩 + 肘：双关节肌与单关节肌",
+      "model": "../models/muscle_shoulder_elbow.xml",
+      "duration": 0.9,
+      "initialPoseRad": { "shoulder_flex": -0.28, "elbow_flex": 0.62 },
+      "muscles": [
+        { "name": "biceps_long_head", "tendon": "biceps_long_head", "maxIsometricForce": 650, "optimalFiberLength": 0.16, "tendonSlackLength": 0.09, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "triceps_long_head", "tendon": "triceps_long_head", "maxIsometricForce": 750, "optimalFiberLength": 0.16, "tendonSlackLength": 0.09, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "brachialis", "tendon": "brachialis", "maxIsometricForce": 500, "optimalFiberLength": 0.105, "tendonSlackLength": 0.055, "maxContractionVelocity": 10, "activationTimeConstant": 0.012, "deactivationTimeConstant": 0.045 },
+        { "name": "posterior_deltoid", "tendon": "posterior_deltoid", "maxIsometricForce": 550, "optimalFiberLength": 0.075, "tendonSlackLength": 0.025, "maxContractionVelocity": 10, "activationTimeConstant": 0.02, "deactivationTimeConstant": 0.06 }
+      ],
+      "controllers": [
+        { "muscle": "biceps_long_head", "baseline": 0.02, "pulses": [{ "muscle": "biceps_long_head", "level": 0.60, "start": 0.08, "duration": 0.36, "riseTime": 0.08 }] },
+        { "muscle": "triceps_long_head", "baseline": 0.02, "pulses": [{ "muscle": "triceps_long_head", "level": 0.34, "start": 0.44, "duration": 0.3, "riseTime": 0.07 }] },
+        { "muscle": "brachialis", "baseline": 0.02, "pulses": [{ "muscle": "brachialis", "level": 0.34, "start": 0.08, "duration": 0.36, "riseTime": 0.08 }] },
+        { "muscle": "posterior_deltoid", "baseline": 0.02, "pulses": [{ "muscle": "posterior_deltoid", "level": 0.3, "start": 0.44, "duration": 0.3, "riseTime": 0.07 }] }
+      ],
+      "rig": { "kind": "shoulder-elbow" }
+    },
+    {
+      "id": "squat-to-stand",
+      "label": "下肢：下蹲起立",
+      "model": "../models/muscle_lower_body.xml",
+      "duration": 1.2,
+      "initialPoseRad": { "root_x": -0.1012, "root_z": -0.1923, "pelvis_tilt": 0.42, "trunk_ext": 0.06, "hip_ext": -1.25, "knee_ext": -1.35, "ankle_pf": -0.52 },
+      "muscles": [
+        { "name": "erector_spinae", "tendon": "erector_spinae", "region": "trunk", "maxIsometricForce": 2200, "optimalFiberLength": 0.12, "tendonSlackLength": 0.16, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "rectus_abdominis", "tendon": "rectus_abdominis", "region": "trunk", "maxIsometricForce": 1200, "optimalFiberLength": 0.14, "tendonSlackLength": 0.15, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "gluteus_maximus", "tendon": "gluteus_maximus", "region": "lower-body", "maxIsometricForce": 3200, "optimalFiberLength": 0.14, "tendonSlackLength": 0.10, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "iliopsoas", "tendon": "iliopsoas", "region": "lower-body", "maxIsometricForce": 1800, "optimalFiberLength": 0.11, "tendonSlackLength": 0.05, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "hamstrings", "tendon": "hamstrings", "region": "lower-body", "maxIsometricForce": 2400, "optimalFiberLength": 0.12, "tendonSlackLength": 0.32, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "rectus_femoris", "tendon": "rectus_femoris", "region": "lower-body", "maxIsometricForce": 2200, "optimalFiberLength": 0.11, "tendonSlackLength": 0.39, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "vasti", "tendon": "vasti", "region": "lower-body", "maxIsometricForce": 5200, "optimalFiberLength": 0.11, "tendonSlackLength": 0.21, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "gastrocnemius", "tendon": "gastrocnemius", "region": "lower-body", "maxIsometricForce": 1800, "optimalFiberLength": 0.09, "tendonSlackLength": 0.39, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "soleus", "tendon": "soleus", "region": "lower-body", "maxIsometricForce": 3400, "optimalFiberLength": 0.08, "tendonSlackLength": 0.22, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "tibialis_anterior", "tendon": "tibialis_anterior", "region": "lower-body", "maxIsometricForce": 1400, "optimalFiberLength": 0.09, "tendonSlackLength": 0.19, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 }
+      ],
+      "controllers": [
+        { "muscle": "erector_spinae", "baseline": 0.16, "pulses": [] }, { "muscle": "rectus_abdominis", "baseline": 0.03, "pulses": [] },
+        { "muscle": "gluteus_maximus", "baseline": 0.25, "pulses": [] }, { "muscle": "iliopsoas", "baseline": 0.03, "pulses": [] },
+        { "muscle": "hamstrings", "baseline": 0.10, "pulses": [] }, { "muscle": "rectus_femoris", "baseline": 0.10, "pulses": [] },
+        { "muscle": "vasti", "baseline": 0.28, "pulses": [] }, { "muscle": "gastrocnemius", "baseline": 0.08, "pulses": [] },
+        { "muscle": "soleus", "baseline": 0.16, "pulses": [] }, { "muscle": "tibialis_anterior", "baseline": 0.05, "pulses": [] }
+      ],
+      "feedback": {
+        "type": "trajectory",
+        "keyframes": [
+          { "time": 0, "joints": { "pelvis_tilt": 0.42, "trunk_ext": 0.06, "hip_ext": -1.25, "knee_ext": -1.35, "ankle_pf": -0.52 } },
+          { "time": 0.12, "joints": { "pelvis_tilt": 0.42, "trunk_ext": 0.06, "hip_ext": -1.25, "knee_ext": -1.35, "ankle_pf": -0.52 } },
+          { "time": 0.84, "joints": { "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.16, "knee_ext": -0.22, "ankle_pf": -0.14 } },
+          { "time": 1.2, "joints": { "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.16, "knee_ext": -0.22, "ankle_pf": -0.14 } }
+        ],
+        "gains": { "trunk_ext": { "kp": 320, "kd": 45 }, "hip_ext": { "kp": 520, "kd": 70 }, "knee_ext": { "kp": 560, "kd": 75 }, "ankle_pf": { "kp": 420, "kd": 60 } },
+        "jointWeights": { "trunk_ext": 1, "hip_ext": 1.8, "knee_ext": 1.8, "ankle_pf": 1.8 },
+        "balance": { "centerOfMassX": { "target": 0.025, "joint": "ankle_pf", "kp": 360, "kd": 80 }, "pelvisTilt": { "target": 0.08, "joint": "hip_ext", "kp": 280, "kd": 45 } },
+        "effortRegularization": 12
+      },
+      "phases": [
+        { "label": "下蹲准备", "start": 0, "end": 0.12 },
+        { "label": "伸展起立", "start": 0.12, "end": 0.84 },
+        { "label": "站立稳定", "start": 0.84, "end": 1.2 }
+      ],
+      "rig": { "kind": "lower-body" }
+    },
+    {
+      "id": "countermovement-drive",
+      "label": "下肢：反向下蹲与蹬伸",
+      "model": "../models/muscle_lower_body.xml",
+      "duration": 1.45,
+      "initialPoseRad": { "root_x": -0.1012, "root_z": -0.001, "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.16, "knee_ext": -0.22, "ankle_pf": -0.14 },
+      "muscles": [
+        { "name": "erector_spinae", "tendon": "erector_spinae", "region": "trunk", "maxIsometricForce": 2200, "optimalFiberLength": 0.12, "tendonSlackLength": 0.16, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "rectus_abdominis", "tendon": "rectus_abdominis", "region": "trunk", "maxIsometricForce": 1200, "optimalFiberLength": 0.14, "tendonSlackLength": 0.15, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "gluteus_maximus", "tendon": "gluteus_maximus", "region": "lower-body", "maxIsometricForce": 3200, "optimalFiberLength": 0.14, "tendonSlackLength": 0.10, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "iliopsoas", "tendon": "iliopsoas", "region": "lower-body", "maxIsometricForce": 1800, "optimalFiberLength": 0.11, "tendonSlackLength": 0.05, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "hamstrings", "tendon": "hamstrings", "region": "lower-body", "maxIsometricForce": 2400, "optimalFiberLength": 0.12, "tendonSlackLength": 0.32, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "rectus_femoris", "tendon": "rectus_femoris", "region": "lower-body", "maxIsometricForce": 2200, "optimalFiberLength": 0.11, "tendonSlackLength": 0.39, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "vasti", "tendon": "vasti", "region": "lower-body", "maxIsometricForce": 5200, "optimalFiberLength": 0.11, "tendonSlackLength": 0.21, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "gastrocnemius", "tendon": "gastrocnemius", "region": "lower-body", "maxIsometricForce": 1800, "optimalFiberLength": 0.09, "tendonSlackLength": 0.39, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "soleus", "tendon": "soleus", "region": "lower-body", "maxIsometricForce": 3400, "optimalFiberLength": 0.08, "tendonSlackLength": 0.22, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "tibialis_anterior", "tendon": "tibialis_anterior", "region": "lower-body", "maxIsometricForce": 1400, "optimalFiberLength": 0.09, "tendonSlackLength": 0.19, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 }
+      ],
+      "controllers": [
+        { "muscle": "erector_spinae", "baseline": 0.16, "pulses": [] }, { "muscle": "rectus_abdominis", "baseline": 0.03, "pulses": [] },
+        { "muscle": "gluteus_maximus", "baseline": 0.25, "pulses": [] }, { "muscle": "iliopsoas", "baseline": 0.03, "pulses": [] },
+        { "muscle": "hamstrings", "baseline": 0.10, "pulses": [] }, { "muscle": "rectus_femoris", "baseline": 0.10, "pulses": [] },
+        { "muscle": "vasti", "baseline": 0.28, "pulses": [] }, { "muscle": "gastrocnemius", "baseline": 0.08, "pulses": [] },
+        { "muscle": "soleus", "baseline": 0.16, "pulses": [] }, { "muscle": "tibialis_anterior", "baseline": 0.05, "pulses": [] }
+      ],
+      "feedback": {
+        "type": "trajectory",
+        "keyframes": [
+          { "time": 0, "joints": { "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.16, "knee_ext": -0.22, "ankle_pf": -0.14 } },
+          { "time": 0.18, "joints": { "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.16, "knee_ext": -0.22, "ankle_pf": -0.14 } },
+          { "time": 0.58, "joints": { "pelvis_tilt": 0.36, "trunk_ext": 0.16, "hip_ext": -0.72, "knee_ext": -0.90, "ankle_pf": -0.46 } },
+          { "time": 0.72, "joints": { "pelvis_tilt": 0.36, "trunk_ext": 0.16, "hip_ext": -0.72, "knee_ext": -0.90, "ankle_pf": -0.46 } },
+          { "time": 1.20, "joints": { "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.24, "knee_ext": -0.32, "ankle_pf": -0.14 } },
+          { "time": 1.45, "joints": { "pelvis_tilt": 0.08, "trunk_ext": 0.02, "hip_ext": -0.24, "knee_ext": -0.32, "ankle_pf": -0.14 } }
+        ],
+        "gains": { "trunk_ext": { "kp": 320, "kd": 45 }, "hip_ext": { "kp": 520, "kd": 70 }, "knee_ext": { "kp": 560, "kd": 75 }, "ankle_pf": { "kp": 420, "kd": 60 } },
+        "jointWeights": { "trunk_ext": 1, "hip_ext": 1.8, "knee_ext": 1.8, "ankle_pf": 1.8 },
+        "balance": { "centerOfMassX": { "target": 0.025, "joint": "ankle_pf", "kp": 360, "kd": 80 }, "pelvisTilt": { "target": 0.08, "joint": "hip_ext", "kp": 280, "kd": 45 } },
+        "effortRegularization": 12
+      },
+      "phases": [
+        { "label": "站立准备", "start": 0, "end": 0.18 },
+        { "label": "反向下蹲", "start": 0.18, "end": 0.58 },
+        { "label": "蹬伸驱动", "start": 0.58, "end": 1.2 },
+        { "label": "支撑回收", "start": 1.2, "end": 1.45 }
+      ],
+      "rig": { "kind": "lower-body" }
+    }
+  ]
+}

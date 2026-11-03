@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ebebee" />
+    <title>h3d · 人体运动实验室</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="header">
+        <a class="brand" href="/" aria-label="h3d 首页"><span class="brand-mark">h</span><strong>h3d</strong><i></i><h1>人体运动实验室</h1></a>
+        <nav aria-label="帮助与资料">
+          <button data-dialog="guide">使用指南</button>
+          <button data-dialog="model">动力链与模型边界 ↗</button>
+          <button data-dialog="sources">资料与许可 ↗</button>
+          <label class="import-button" for="motion-file">导入动作 JSON</label>
+          <input id="motion-file" type="file" accept="application/json,.json" hidden />
+        </nav>
+      </header>
+
+      <section class="workspace" aria-label="人体动作实验室">
+        <aside class="motion-panel" id="motion-panel">
+          <div class="panel-heading"><h2>动作库</h2><span id="clip-count">00</span></div>
+          <p class="panel-intro">肌肉驱动 · 正向动力学实验</p>
+          <div id="motion-list" class="motion-list"></div>
+          <div class="motion-notes">
+            <div class="mini-heading">观察重点</div>
+            <p id="motion-description">等待动作数据载入。</p>
+            <div id="focus-list" class="focus-list"></div>
+          </div>
+          <div class="asset-note"><span class="asset-icon">◈</span><div>MuJoCo 肌骨仿真<small id="model-label">正在载入模型…</small></div></div>
+        </aside>
+
+        <section class="viewport" aria-label="3D 人体视图">
+          <canvas id="scene" aria-label="可旋转的三维人体动作视图"></canvas>
+          <div class="viewport-heading"><h2 id="clip-title">人体动作</h2><p id="clip-subtitle">动作数据与物理仿真完全分离</p></div>
+          <div class="camera-toolbar" aria-label="快速视角">
+            <button data-camera="front" aria-pressed="false">正面</button>
+            <button data-camera="side" aria-pressed="false">侧面</button>
+            <button data-camera="back" aria-pressed="false">背面</button>
+            <button data-camera="threeQuarter" aria-pressed="true">45°</button>
+            <button id="fit-view" title="完整人体适配视角" aria-label="完整人体适配视角">适配</button>
+          </div>
+          <div class="canvas-hint"><i></i>拖动旋转<span></span>滚轮缩放<span></span>拖动时间轴逐帧观察</div>
+          <div id="loading" class="loading"><span class="loading-orbit"></span><strong>正在载入动作数据</strong><p>查看器只读取版本化动作 JSON</p></div>
+        </section>
+
+        <aside class="inspector" id="inspector">
+          <div class="panel-heading"><h2>观察</h2><span id="data-status">等待数据</span></div>
+          <div class="toggle-list" aria-label="显示内容">
+            <label class="toggle-row"><span>人体表面<small>连续外形示意</small></span><button class="switch on" data-layer="surface" role="switch" aria-checked="true" aria-label="人体表面"><i></i></button></label>
+            <label class="toggle-row"><span>解剖骨骼与关节</span><button class="switch on" data-layer="skeleton" role="switch" aria-checked="true" aria-label="解剖骨骼与关节"><i></i></button></label>
+            <label class="toggle-row"><span>关节坐标轴</span><button class="switch" data-layer="axes" role="switch" aria-checked="false" aria-label="关节坐标轴"><i></i></button></label>
+            <label class="toggle-row"><span>地面接触反力</span><button class="switch on" data-layer="grf" role="switch" aria-checked="true" aria-label="地面接触反力"><i></i></button></label>
+            <label class="toggle-row"><span>肌腱作用路径</span><button class="switch on" data-layer="tendons" role="switch" aria-checked="true" aria-label="肌腱作用路径"><i></i></button></label>
+          </div>
+
+          <section class="dynamics-panel">
+            <div class="section-heading"><div><span class="eyebrow">PHYSICS</span><h2>力学观测</h2></div><span class="unit-tag">实时样本</span></div>
+            <dl class="readouts">
+              <div><dt>垂直地面反力</dt><dd><strong id="grf-z">0</strong><small>N</small></dd></div>
+              <div><dt>总地面反力</dt><dd><strong id="grf-total">0</strong><small>N</small></dd></div>
+              <div><dt>接触点</dt><dd><strong id="contact-count">0</strong><small>处</small></dd></div>
+              <div><dt>重心高度</dt><dd><strong id="com-height">—</strong><small>m</small></dd></div>
+            </dl>
+            <div class="subheading">肌肉机械功率 <small>W</small></div>
+            <div id="power-list" class="power-list"></div>
+            <div class="subheading muscle-heading">代表肌群 <small>激活 · 肌力</small></div>
+            <div id="muscle-list" class="muscle-list"></div>
+            <div class="subheading joint-heading">关节状态 <small>角度 · 速度</small></div>
+            <div id="joint-list" class="joint-list"></div>
+          </section>
+          <div class="settings-section">
+            <div class="speed-label"><span>播放速度</span><output id="speed-value">1.0×</output></div>
+            <input id="speed" type="range" min="0.25" max="2" step="0.25" value="1" aria-label="播放速度" />
+            <div class="range-labels"><span>0.25×</span><span>2×</span></div>
+            <label class="loop-row"><span>循环播放</span><button id="loop" class="switch on" role="switch" aria-checked="true" aria-label="循环播放"><i></i></button></label>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="playback">
+        <div class="transport"><button id="play" class="play-button" type="button" aria-label="播放动作">▶</button><button id="restart" class="restart-button" type="button" aria-label="回到开头">↺</button></div>
+        <div class="timeline-area">
+          <div class="timeline-meta"><span>动作进度 <i>·</i> <b id="time-readout">0.000 / 0.000 s</b></span><span id="phase-readout">准备载入</span></div>
+          <input id="scrubber" type="range" min="0" max="1" step="0.0001" value="0" aria-label="动作时间" />
+          <div id="phase-markers" class="phase-markers"></div>
+        </div>
+        <div id="playback-label" class="playback-label">h3d · 肌肉机制实验</div>
+      </footer>
+    </main>
+
+    <dialog class="info-dialog" id="info-dialog">
+      <div class="dialog-heading"><h2 id="dialog-title"></h2><button id="dialog-close" aria-label="关闭">×</button></div>
+      <div id="dialog-content"></div>
+    </dialog>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

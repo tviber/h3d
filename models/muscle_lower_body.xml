@@ -1,0 +1,113 @@
+<mujoco model="h3d_muscle_lower_body">
+  <compiler angle="radian" inertiafromgeom="false" autolimits="true"/>
+  <option timestep="0.0005" integrator="RK4" gravity="0 0 -9.81">
+    <flag contact="enable" energy="enable"/>
+  </option>
+  <default>
+    <geom contype="0" conaffinity="0" rgba="0.74 0.53 0.42 1"/>
+    <site size="0.01" rgba="0.9 0.2 0.15 1"/>
+    <motor ctrlrange="-1 1" ctrllimited="true"/>
+  </default>
+  <worldbody>
+    <geom name="floor" type="plane" size="2 2 0.1" contype="1" conaffinity="1" friction="1.2 0.005 0.0001"/>
+
+    <body name="pelvis" pos="0 0 0.915">
+      <joint name="root_x" type="slide" axis="1 0 0" damping="1.0" armature="0.01"/>
+      <joint name="root_z" type="slide" axis="0 0 1" damping="1.0" armature="0.01"/>
+      <!-- Positive pelvis_tilt is anterior tilt. -->
+      <joint name="pelvis_tilt" type="hinge" axis="0 1 0" range="-0.8 0.9" damping="3.0" armature="0.03"/>
+      <inertial pos="0 0 0.05" mass="11.17" diaginertia="0.09 0.09 0.08"/>
+      <site name="pelvis" pos="0 0 0"/>
+      <site name="gluteus_origin" pos="-0.075 0 0.05"/>
+      <site name="hamstrings_origin" pos="-0.065 0 -0.05"/>
+      <site name="iliopsoas_origin" pos="0.055 0 0.06"/>
+      <site name="rectus_femoris_origin" pos="0.060 0 0.01"/>
+      <site name="erector_origin" pos="-0.060 0 0.06"/>
+      <site name="rectus_abdominis_origin" pos="0.070 0 0.05"/>
+
+      <body name="trunk" pos="0 0 0.12">
+        <!-- Positive trunk_ext extends the trunk; negative values lean forward. -->
+        <joint name="trunk_ext" type="hinge" axis="0 -1 0" range="-0.9 0.5" damping="4.0" stiffness="30" armature="0.04"/>
+        <inertial pos="0 0 0.24" mass="34.2" diaginertia="1.2 1.1 0.5"/>
+        <site name="waist" pos="0 0 0"/>
+        <site name="neck" pos="0 0 0.40"/>
+        <site name="head" pos="0 0 0.56"/>
+        <site name="leftShoulder" pos="0 0.18 0.36"/>
+        <site name="rightShoulder" pos="0 -0.18 0.36"/>
+        <site name="leftElbow" pos="0.04 0.21 0.12"/>
+        <site name="rightElbow" pos="0.04 -0.21 0.12"/>
+        <site name="leftWrist" pos="0.16 0.19 -0.01"/>
+        <site name="rightWrist" pos="0.16 -0.19 -0.01"/>
+        <site name="leftHand" pos="0.18 0.19 -0.02"/>
+        <site name="rightHand" pos="0.18 -0.19 -0.02"/>
+        <site name="erector_insertion" pos="-0.060 0 0.22"/>
+        <site name="rectus_abdominis_insertion" pos="0.070 0 0.22"/>
+      </body>
+
+      <body name="thigh" pos="0 0 0">
+        <!-- Positive hip_ext extends the hip; negative values flex it. -->
+        <joint name="hip_ext" type="hinge" axis="0 1 0" range="-2.0 0.45" damping="3.0" armature="0.03"/>
+        <inertial pos="0 0 -0.18" mass="15.9" diaginertia="0.26 0.26 0.05"/>
+        <site name="leftHip" pos="0 0.095 0"/>
+        <site name="rightHip" pos="0 -0.095 0"/>
+        <site name="gluteus_insertion" pos="-0.055 0 -0.15"/>
+        <site name="iliopsoas_insertion" pos="0.048 0 -0.13"/>
+        <site name="vasti_origin" pos="0.052 0 -0.20"/>
+        <site name="gastrocnemius_origin" pos="-0.045 0 -0.36"/>
+        <geom name="hip_post_wrap" type="cylinder" pos="0 0 0" zaxis="0 1 0" size="0.055 0.05"/>
+        <site name="hip_post_side" pos="-0.09 0 0"/>
+        <geom name="patella_wrap" type="cylinder" pos="0 0 -0.42" zaxis="0 1 0" size="0.048 0.05"/>
+        <site name="patella_side" pos="0.085 0 -0.42"/>
+
+        <body name="shank" pos="0 0 -0.42">
+          <!-- Negative knee_ext flexes the knee; zero is full extension. -->
+          <joint name="knee_ext" type="hinge" axis="0 -1 0" range="-2.2 0.02" damping="2.5" armature="0.02"/>
+          <inertial pos="0 0 -0.18" mass="6.98" diaginertia="0.09 0.09 0.015"/>
+          <site name="leftKnee" pos="0 0.095 0"/>
+          <site name="rightKnee" pos="0 -0.095 0"/>
+          <site name="hamstrings_insertion" pos="-0.045 0 -0.07"/>
+          <site name="rectus_femoris_insertion" pos="0.048 0 -0.07"/>
+          <site name="vasti_insertion" pos="0.048 0 -0.07"/>
+          <site name="soleus_origin" pos="-0.042 0 -0.15"/>
+          <site name="tibialis_origin" pos="0.042 0 -0.15"/>
+
+          <body name="foot" pos="0 0 -0.42">
+            <!-- Positive ankle_pf is plantarflexion; negative is dorsiflexion. -->
+            <joint name="ankle_pf" type="hinge" axis="0 1 0" range="-0.75 0.85" damping="2.0" armature="0.015"/>
+            <inertial pos="0.05 0 -0.03" mass="2.05" diaginertia="0.008 0.008 0.004"/>
+            <site name="leftAnkle" pos="0 0.095 0"/>
+            <site name="rightAnkle" pos="0 -0.095 0"/>
+            <site name="leftHeel" pos="-0.05 0.095 -0.05"/>
+            <site name="rightHeel" pos="-0.05 -0.095 -0.05"/>
+            <site name="leftToe" pos="0.15 0.095 -0.05"/>
+            <site name="rightToe" pos="0.15 -0.095 -0.05"/>
+            <site name="achilles_insertion" pos="-0.055 0 -0.02"/>
+            <site name="tibialis_insertion" pos="0.065 0 -0.02"/>
+            <geom name="heel_l" type="sphere" pos="-0.05 0.095 -0.05" size="0.025" contype="1" conaffinity="1" solref="0.008 1" solimp="0.95 0.99 0.001"/>
+            <geom name="heel_r" type="sphere" pos="-0.05 -0.095 -0.05" size="0.025" contype="1" conaffinity="1" solref="0.008 1" solimp="0.95 0.99 0.001"/>
+            <geom name="toe_l" type="sphere" pos="0.15 0.095 -0.05" size="0.025" contype="1" conaffinity="1" solref="0.008 1" solimp="0.95 0.99 0.001"/>
+            <geom name="toe_r" type="sphere" pos="0.15 -0.095 -0.05" size="0.025" contype="1" conaffinity="1" solref="0.008 1" solimp="0.95 0.99 0.001"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <tendon>
+    <spatial name="erector_spinae"><site site="erector_origin"/><site site="erector_insertion"/></spatial>
+    <spatial name="rectus_abdominis"><site site="rectus_abdominis_origin"/><site site="rectus_abdominis_insertion"/></spatial>
+    <spatial name="gluteus_maximus"><site site="gluteus_origin"/><geom geom="hip_post_wrap" sidesite="hip_post_side"/><site site="gluteus_insertion"/></spatial>
+    <spatial name="iliopsoas"><site site="iliopsoas_origin"/><site site="iliopsoas_insertion"/></spatial>
+    <spatial name="hamstrings"><site site="hamstrings_origin"/><site site="hamstrings_insertion"/></spatial>
+    <spatial name="rectus_femoris"><site site="rectus_femoris_origin"/><geom geom="patella_wrap" sidesite="patella_side"/><site site="rectus_femoris_insertion"/></spatial>
+    <spatial name="vasti"><site site="vasti_origin"/><geom geom="patella_wrap" sidesite="patella_side"/><site site="vasti_insertion"/></spatial>
+    <spatial name="gastrocnemius"><site site="gastrocnemius_origin"/><site site="achilles_insertion"/></spatial>
+    <spatial name="soleus"><site site="soleus_origin"/><site site="achilles_insertion"/></spatial>
+    <spatial name="tibialis_anterior"><site site="tibialis_origin"/><site site="tibialis_insertion"/></spatial>
+  </tendon>
+  <actuator>
+    <motor name="trunk_ext" joint="trunk_ext" gear="450"/>
+    <motor name="hip_ext" joint="hip_ext" gear="650"/>
+    <motor name="knee_ext" joint="knee_ext" gear="650"/>
+    <motor name="ankle_pf" joint="ankle_pf" gear="500"/>
+  </actuator>
+</mujoco>

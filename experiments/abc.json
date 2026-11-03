@@ -1,0 +1,31 @@
+{
+  "model": "../models/upper_body.xml",
+  "duration": 0.6,
+  "initialPoseDeg": {
+    "pelvis_rot": -45,
+    "trunk_rot": 0,
+    "shoulder_hadd": -40,
+    "elbow_flex": 0,
+    "wrist_flex": -60
+  },
+  "pulseSets": {
+    "arm": [
+      { "joint": "shoulder_hadd", "peak": 60, "start": 0.12, "duration": 0.20, "direction": 1 },
+      { "joint": "elbow_flex", "peak": 25, "start": 0.16, "duration": 0.15, "direction": 1 },
+      { "joint": "wrist_flex", "peak": 6, "start": 0.22, "duration": 0.12, "direction": 1 }
+    ],
+    "proximal_sequential": [
+      { "joint": "pelvis_rot", "peak": 120, "start": 0.00, "duration": 0.30, "direction": 1 },
+      { "joint": "trunk_rot", "peak": 80, "start": 0.05, "duration": 0.30, "direction": 1 }
+    ],
+    "proximal_simultaneous": [
+      { "joint": "pelvis_rot", "peak": 120, "start": 0.12, "duration": 0.30, "direction": 1 },
+      { "joint": "trunk_rot", "peak": 80, "start": 0.12, "duration": 0.30, "direction": 1 }
+    ]
+  },
+  "experiments": [
+    { "id": "A", "label": "arm only (pelvis/trunk unactuated)", "use": ["arm"] },
+    { "id": "B", "label": "pelvis -> trunk -> arm (proximal first)", "use": ["arm", "proximal_sequential"] },
+    { "id": "C", "label": "pelvis + trunk start with the arm", "use": ["arm", "proximal_simultaneous"] }
+  ]
+}

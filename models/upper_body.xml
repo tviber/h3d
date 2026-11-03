@@ -1,0 +1,120 @@
+<!--
+  h3d v0.0.1: simplified upper-body kinetic chain of a right-handed player.
+
+  World frame: x = hitting direction (forward), y = player's left, z = up.
+  The legs are fixed to the ground; the pelvis rotates over them.
+
+  Every actuated hinge has a vertical axis at the reference pose (qpos = 0):
+  the right arm is abducted 90 deg in the coronal plane with the palm facing +x,
+  so shoulder horizontal adduction, elbow flexion and wrist flexion all rotate
+  about z. The chain therefore moves in the transverse plane and gravity is
+  carried by the hinge constraints (it does no work). Positive angle =
+  forward-swing direction (counter-clockwise seen from above).
+  The only spring is the spine torsion (trunk_rot, neutral at 0), so any pose
+  with trunk_rot = 0 is an exact static equilibrium under zero torque.
+
+  Segment masses / CoM / radii of gyration: de Leva (1996) male tables scaled
+  to 75 kg. Body-frame inertia axes: x = sagittal (antero-posterior) radius,
+  z = vertical. Trunk segments: y = transverse, z = longitudinal. Arm segments
+  lie along -y, so y = longitudinal and z = transverse; only I_zz matters for
+  the motion because every hinge is vertical. Racket: 300 g, balance 0.33 m, swingweight 320 kg*cm^2 (about an
+  axis 0.10 m from the butt). See docs/physics-model.md.
+
+  Actuators are ideal torque motors:
+    applied joint torque [N*m] = gear * clamp(ctrl, -1, 1)
+  so gear is the torque capacity of each joint.
+-->
+<mujoco model="h3d_upper_body">
+  <compiler angle="degree" inertiafromgeom="false" autolimits="true"/>
+
+  <option timestep="0.0005" integrator="RK4" gravity="0 0 -9.81">
+    <flag contact="disable" energy="enable"/>
+  </option>
+
+  <default>
+    <geom contype="0" conaffinity="0" rgba="0.82 0.70 0.60 1"/>
+    <joint type="hinge" axis="0 0 1"/>
+    <motor ctrlrange="-1 1"/>
+  </default>
+
+  <worldbody>
+    <light pos="0 -1 4" dir="0 0.3 -1"/>
+    <geom name="floor" type="plane" size="3 3 0.1" rgba="0.35 0.45 0.35 1"/>
+    <!-- Legs: visual only, rigidly part of the ground. -->
+    <geom name="leg_r" type="capsule" fromto="0 -0.09 0.05 0 -0.09 0.86" size="0.06" rgba="0.3 0.3 0.4 1"/>
+    <geom name="leg_l" type="capsule" fromto="0 0.09 0.05 0 0.09 0.86" size="0.06" rgba="0.3 0.3 0.4 1"/>
+
+    <!-- Pelvis (de Leva lower trunk), origin at the hip-joint centre height. -->
+    <body name="pelvis" pos="0 0 0.92">
+      <joint name="pelvis_rot" range="-70 70" damping="0.5"/>
+      <inertial pos="0 0 0.057" mass="8.378" diaginertia="0.0673 0.0540 0.0613"/>
+      <geom type="ellipsoid" pos="0 0 0.06" size="0.10 0.16 0.09"/>
+      <site name="r_hip" pos="0 -0.09 0" size="0.01"/>
+      <site name="l_hip" pos="0 0.09 0" size="0.01"/>
+
+      <!-- Trunk (de Leva upper + middle trunk), origin at the lumbar joint (OMPH). -->
+      <body name="trunk" pos="0 0 0.146">
+        <!-- Spine axial torsion: equivalent passive stiffness 150 N*m/rad (~2.6 N*m/deg), neutral at 0. -->
+        <joint name="trunk_rot" range="-50 50" damping="0.5" stiffness="150"/>
+        <inertial pos="0 0 0.250" mass="24.218" diaginertia="0.922 0.658 0.429"/>
+        <geom type="ellipsoid" pos="0 0 0.22" size="0.11 0.17 0.23"/>
+
+        <!-- Head + neck, welded to the trunk. -->
+        <body name="head" pos="0 0 0.458">
+          <inertial pos="0 0 0.098" mass="5.205" diaginertia="0.0402 0.0434 0.0299"/>
+          <geom type="sphere" pos="0 0 0.11" size="0.10"/>
+        </body>
+
+        <site name="l_shoulder" pos="0 0.19 0.37" size="0.01"/>
+
+        <!-- Left (non-racket) arm hanging at the side, welded to the trunk. -->
+        <body name="l_arm" pos="0 0.19 0.37">
+          <inertial pos="0 0 -0.298" mass="3.705" diaginertia="0.119 0.117 0.0059"/>
+          <geom type="capsule" fromto="0 0 0 0 0.02 -0.62" size="0.04"/>
+        </body>
+
+        <!-- Right upper arm; shoulder joint centre 1.436 m above the ground. -->
+        <body name="r_upper_arm" pos="0 -0.19 0.37">
+          <joint name="shoulder_hadd" range="-60 135" damping="0.2"/>
+          <inertial pos="0 -0.163 0" mass="2.033" diaginertia="0.0131 0.0040 0.0117"/>
+          <geom type="capsule" fromto="0 0 0 0 -0.282 0" size="0.045"/>
+          <site name="shoulder" size="0.01"/>
+
+          <body name="r_forearm" pos="0 -0.282 0">
+            <joint name="elbow_flex" range="0 145" damping="0.1"/>
+            <inertial pos="0 -0.123 0" mass="1.215" diaginertia="0.0067 0.0013 0.0062"/>
+            <geom type="capsule" fromto="0 0 0 0 -0.269 0" size="0.035"/>
+            <site name="elbow" size="0.01"/>
+
+            <body name="r_hand" pos="0 -0.269 0">
+              <joint name="wrist_flex" range="-70 80" damping="0.05"/>
+              <inertial pos="0 -0.068 0" mass="0.458" diaginertia="0.00134 0.00055 0.00089"/>
+              <geom type="box" pos="0 -0.05 0" size="0.015 0.05 0.04"/>
+              <site name="wrist" size="0.01"/>
+
+              <!-- Racket, rigidly gripped; butt cap 0.04 m distal of the wrist centre.
+                   Shaft along -y, string-bed normal along +x (hitting direction). -->
+              <body name="racket" pos="0 -0.04 0">
+                <inertial pos="0 -0.33 0" mass="0.300" diaginertia="0.0175 0.0014 0.01613"/>
+                <geom type="capsule" fromto="0 0 0 0 -0.36 0" size="0.014" rgba="0.15 0.15 0.15 1"/>
+                <geom type="ellipsoid" pos="0 -0.52 0" size="0.008 0.165 0.125" rgba="0.85 0.85 0.2 0.6"/>
+                <site name="racket_butt" size="0.01"/>
+                <!-- Racket head = geometric centre of the string bed. -->
+                <site name="racket_head" pos="0 -0.52 0" size="0.012"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- Ideal torque motors. Applied joint torque = gear * clamp(ctrl, -1, 1) [N*m]. -->
+  <actuator>
+    <motor name="pelvis_rot" joint="pelvis_rot" gear="200"/>
+    <motor name="trunk_rot" joint="trunk_rot" gear="150"/>
+    <motor name="shoulder_hadd" joint="shoulder_hadd" gear="100"/>
+    <motor name="elbow_flex" joint="elbow_flex" gear="70"/>
+    <motor name="wrist_flex" joint="wrist_flex" gear="15"/>
+  </actuator>
+</mujoco>
