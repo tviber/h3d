@@ -122,9 +122,10 @@ qfrc_actuator   = gear · actuator_force          作用在关节 dof 上的广�
 ### 模块边界
 
 - **Musculoskeletal Model**（`src/muscle-model.ts`）：MuJoCo `spatial tendon` 定义肌腱路径。每个肌肉配置最大等长力、最优纤维长度、肌腱松弛长度、最大收缩速度和激活动力学时间常数。由稀疏肌腱雅可比求力臂 `r = −dL/dq`，并用 `τ = rF` 汇总到关节。
-- **Physics Simulation**（`src/muscle-simulate.ts`）：在当前姿态下计算肌腱长度、速度、力臂与肌肉力，经关节力矩接口送入 MuJoCo。支持未驱动浮动根自由度、正向积分和地面接触，并记录关节、身体测点、重心、接触力、压力中心、接触位置、肌腱路径与肌肉功率。
+- **Physics Simulation**（`src/muscle-simulate.ts`）：在当前姿态下计算肌腱长度、速度、力臂与肌肉力，经关节力矩接口送入 MuJoCo。支持未驱动浮动根自由度、正向积分和地面接触，并记录关节、身体测点、刚体绑定及逐帧位姿、重心、接触力、压力中心、接触位置、肌腱路径与肌肉功率。
 - **Motor Control**（`src/motor-control.ts`）：支持带平滑边沿的开环激活脉冲，也支持平滑关节轨迹、关节 PD 反馈、重心/骨盆平衡反馈和有界肌肉力分配。激励经不同的激活/去激活时间常数形成实际激活。
-- 核心模块只依赖 MuJoCo、肌肉模型和控制模块，不导入 A/B/C、图表、动作导出或查看器代码。`src/muscle-cli.ts` 与 `src/motion-clip.ts` 是可选外围适配器，负责生成独立的 `h3d.motion.v1` 文件；静态查看器只读取该文件。
+- 核心模块只依赖 MuJoCo、肌肉模型和控制模块，不导入 A/B/C、图表、动作导出或查看器代码。`src/muscle-cli.ts` 与 `src/motion-clip.ts` 是可选外围适配器，负责生成独立的 `h3d.motion.v1` 文件；Three.js 查看器只读取该文件。
+- **Avatar Adapter**（`web/avatar/`）：前端独立加载显示 GLB 与 Profile，将动作样本映射到具体骨骼。骨骼名称、自然站姿和坐标校准属于 Avatar Profile；物理模拟器不依赖 MakeHuman，也不会从显示人模回写物理状态。当前提供 MakeHuman CC0 人模与简化连杆两种显示模式。
 
 ### 当前的力近似
 
@@ -149,6 +150,18 @@ npm run web
 ```
 
 仿真积分步长为 0.5 ms；动作导出每 10 个积分步采样一次，通常间隔 5 ms。若实验时长不落在固定步长网格上，最后一个积分步缩短，使 `samples.at(-1).time === duration`。静态服务只提供 `web/` 内容，不调用模拟器。
+
+### 动作导出与 Avatar 重定向
+
+`h3d.motion.v1` 的刚体信息是可选扩展，因此旧动作文件仍可读取：
+
+- `rig.coordinateFrame` 声明 MuJoCo 世界轴（前方 `+x`、左侧 `+y`、上方 `+z`）、米制单位和 `wxyz` 四元数顺序。
+- `rig.bodies` 为每个导出刚体记录 `id`、`name`、`parent`、`restPosition` 和 `restQuaternion`，描述物理模型绑定状态及层级。
+- `samples[].bodies[name]` 记录该帧刚体的 `position` 与 `quaternion`。显示端按坐标基变换转换到 Three.js（左 `+x`、上 `+y`、前 `+z`），四元数按 `q' = q_basis · q · q_basis⁻¹` 转换。
+
+`AvatarAdapter` 使用 Avatar Profile 映射骨盆、脊柱、肩肘腕、髋膝踝与手足骨骼，并以显示人模自己的骨长执行 IK。上肢实验由肩肘腕测点驱动右臂；下肢实验根据骨盆/躯干姿态和髋膝踝测点重定向双腿。未建模关节使用 Profile 的自然姿态，手掌和手指随前臂连续跟随。适配器不写入 `clip` 或 `frame`，也不修改模拟器的关节角、质量、肌肉力及积分状态；更换显示 Avatar 不会改变物理数据。
+
+验证覆盖四个动作的帧级重定向、骨长不变、手腕与手掌连续、足部支撑高度、资产蒙皮权重/绑定姿态保持，以及旧版缺少 `bodies` 字段的文件兼容。MakeHuman 模型依 CC0 提供，许可及来源记录在 `web/models/MAKEHUMAN-LICENSE.md`、`web/models/CC0-1.0.txt` 和 `web/models/ASSET-PROVENANCE.md`。
 
 ## 9. 下肢、骨盆、躯干与地面接触
 
@@ -184,7 +197,7 @@ npm run web
 
 ### 近似与限制
 
-- 节段与接触构成二维共享腿模型；没有独立左右髋膝踝、侧向躯干控制、脚掌滚动关节、足趾或真实人体蒙皮。
+- 物理模拟是共享节段运动的二维模型；没有独立左右髋膝踝、侧向躯干控制、脚掌滚动关节、足趾自由度或人体蒙皮。Three.js 查看器的人体表面由独立 AvatarAdapter 显示，不改变上述物理模型边界。
 - 肌腱不可伸长，肌肉力模型未标定；支撑偏置由当前模型反演，但姿态增益和重心目标仍是演示参数，且假定平面内足部刚性支撑。MuJoCo 足底接触是柔性约束，实际接触运动与理想支撑投影不会完全相同。
 - 接触力是刚体接触求解结果，取决于接触几何、摩擦和 solver 参数；不能视作实测测力台数据。
 - 闭环反馈展示给定轨迹在模型中的执行，不保证对其他体型、初始姿态或动作目标有效。

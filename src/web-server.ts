@@ -4,13 +4,30 @@ import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const WEB_ROOT = resolve(fileURLToPath(new URL('../web/', import.meta.url)));
+const THREE_ROOT = resolve(fileURLToPath(new URL('../node_modules/three/', import.meta.url)));
 const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
+  '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
+  '.png': 'image/png',
+  '.txt': 'text/plain; charset=utf-8',
 };
 const port = Number(process.env.PORT ?? 4173);
+
+function resolveStaticTarget(pathname: string): string | null {
+  if (pathname === '/') return resolve(WEB_ROOT, './index.html');
+  if (pathname.startsWith('/vendor/three/')) {
+    const sub = pathname.slice('/vendor/three/'.length);
+    const target = resolve(THREE_ROOT, sub);
+    return target.startsWith(`${THREE_ROOT}${sep}`) ? target : null;
+  }
+  const target = resolve(WEB_ROOT, `.${pathname}`);
+  return target.startsWith(`${WEB_ROOT}${sep}`) ? target : null;
+}
 
 const server = createServer((request, response) => {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -24,9 +41,8 @@ const server = createServer((request, response) => {
     response.writeHead(400).end('Bad Request');
     return;
   }
-  if (pathname === '/') pathname = '/index.html';
-  const target = resolve(WEB_ROOT, `.${pathname}`);
-  if (!target.startsWith(`${WEB_ROOT}${sep}`) || !existsSync(target) || !statSync(target).isFile()) {
+  const target = resolveStaticTarget(pathname);
+  if (!target || !existsSync(target) || !statSync(target).isFile()) {
     response.writeHead(404).end('Not Found');
     return;
   }

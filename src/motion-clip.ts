@@ -1,5 +1,10 @@
 import type { MuscleExperiment, MotionPhase } from './muscle-experiment.ts';
-import type { MuscleRecording, Vec3 } from './muscle-simulate.ts';
+import type { MuscleRecording, Quat, RigidBodySpec, Vec3 } from './muscle-simulate.ts';
+
+export interface RigidBodyPose {
+  position: Vec3;
+  quaternion: Quat;
+}
 
 export interface MotionClip {
   schemaVersion: 'h3d.motion.v1';
@@ -10,8 +15,16 @@ export interface MotionClip {
   phases: MotionPhase[];
   rig: {
     kind: 'elbow' | 'shoulder-elbow' | 'lower-body';
+    coordinateFrame?: {
+      forward: '+x';
+      left: '+y';
+      up: '+z';
+      units: 'm';
+      quaternionOrder: 'wxyz';
+    };
     staticPositions: Record<string, Vec3>;
     segments: { from: string; to: string; radius: number; group: 'torso' | 'arm' | 'leg' }[];
+    bodies?: RigidBodySpec[];
     jointNames: string[];
     jointTypes: Record<string, 'hinge' | 'slide'>;
     muscles: { name: string; maxIsometricForce: number; region: 'lower-body' | 'trunk' | 'upper-body' }[];
@@ -20,6 +33,7 @@ export interface MotionClip {
     time: number;
     com: Vec3;
     positions: Record<string, Vec3>;
+    bodies?: Record<string, RigidBodyPose>;
     joints: Record<string, { angle: number; velocity: number }>;
     muscles: Record<string, { activation: number; force: number; length: number }>;
     grf: { force: Vec3; centerOfPressure: Vec3 | null; contactCount: number; feet: Record<'left' | 'right', Vec3> };
@@ -68,6 +82,10 @@ function vec3(values: [Float64Array, Float64Array, Float64Array], index: number)
   return [values[0][index], values[1][index], values[2][index]];
 }
 
+function quat(values: [Float64Array, Float64Array, Float64Array, Float64Array], index: number): Quat {
+  return [values[0][index], values[1][index], values[2][index], values[3][index]];
+}
+
 export function toMotionClip(experiment: MuscleExperiment, recording: MuscleRecording): MotionClip {
   const sampleStep = 10;
   const sampleIndices: number[] = [];
@@ -81,6 +99,13 @@ export function toMotionClip(experiment: MuscleExperiment, recording: MuscleReco
     if (positions.elbow && !positions.rightElbow) positions.rightElbow = positions.elbow;
     if (positions.wrist && !positions.rightWrist) positions.rightWrist = positions.wrist;
     if (positions.hand && !positions.rightHand) positions.rightHand = positions.hand;
+    const bodies: Record<string, RigidBodyPose> = {};
+    for (const body of recording.bodies) {
+      bodies[body.name] = {
+        position: vec3(recording.bodyPositions.get(body.name)!, k),
+        quaternion: quat(recording.bodyQuaternions.get(body.name)!, k),
+      };
+    }
     const joints = Object.fromEntries(recording.joints.map((name) => [name, {
       angle: recording.jointColumns.get(`angle_${name}`)![k],
       velocity: recording.jointColumns.get(`velocity_${name}`)![k],
@@ -101,7 +126,7 @@ export function toMotionClip(experiment: MuscleExperiment, recording: MuscleReco
     samples.push({
       time: recording.times[k],
       com: [recording.com[0][k], recording.com[1][k], recording.com[2][k]],
-      positions, joints, muscles,
+      positions, bodies, joints, muscles,
       grf: { force: [recording.grf[0][k], recording.grf[1][k], recording.grf[2][k]], centerOfPressure, contactCount: recording.contactCount[k], feet },
       contacts: recording.contacts[k], tendonPaths, regionalPower,
     });
@@ -112,8 +137,16 @@ export function toMotionClip(experiment: MuscleExperiment, recording: MuscleReco
     duration: experiment.duration, timestep: recording.dt * sampleStep, phases: experiment.phases ?? [],
     rig: {
       kind: experiment.rig.kind,
+      coordinateFrame: {
+        forward: '+x',
+        left: '+y',
+        up: '+z',
+        units: 'm',
+        quaternionOrder: 'wxyz',
+      },
       staticPositions: STATIC_POSITIONS,
       segments: experiment.rig.kind === 'lower-body' ? LOWER_BODY_SEGMENTS : BASE_SEGMENTS,
+      bodies: recording.bodies,
       jointNames: recording.joints,
       jointTypes: recording.jointTypes,
       muscles: experiment.muscles.map(({ name, maxIsometricForce, region }) => ({

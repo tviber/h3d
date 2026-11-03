@@ -17,10 +17,12 @@
     "smoke": "node src/cli.ts compare --out out/smoke --duration 0.6 --no-png"
   },
   "dependencies": {
-    "@mujoco/mujoco": "3.17.0"
+    "@mujoco/mujoco": "3.17.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
+    "@types/three": "^0.180.0",
     "typescript": "5.9.3"
   }
 }

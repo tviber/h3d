@@ -6,6 +6,14 @@
     <meta name="theme-color" content="#ebebee" />
     <title>h3d · 人体运动实验室</title>
     <link rel="stylesheet" href="/style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/build/three.module.js",
+          "three/addons/": "/vendor/three/examples/jsm/"
+        }
+      }
+    </script>
   </head>
   <body>
     <main class="app-shell">
@@ -39,6 +47,7 @@
           <div class="camera-toolbar" aria-label="快速视角">
             <button data-camera="front" aria-pressed="false">正面</button>
             <button data-camera="side" aria-pressed="false">侧面</button>
+            <button data-camera="top" aria-pressed="false">俯视</button>
             <button data-camera="back" aria-pressed="false">背面</button>
             <button data-camera="threeQuarter" aria-pressed="true">45°</button>
             <button id="fit-view" title="完整人体适配视角" aria-label="完整人体适配视角">适配</button>
@@ -49,9 +58,16 @@
 
         <aside class="inspector" id="inspector">
           <div class="panel-heading"><h2>观察</h2><span id="data-status">等待数据</span></div>
+          <div class="avatar-selector" aria-label="人模选择">
+            <span class="mini-heading">显示人模 <small id="avatar-status">MakeHuman CC0</small></span>
+            <div class="segmented-control" role="radiogroup" aria-label="Avatar 切换">
+              <button type="button" data-avatar="makehuman" class="active" aria-pressed="true">MakeHuman 人体</button>
+              <button type="button" data-avatar="simplified" aria-pressed="false">简化连杆</button>
+            </div>
+          </div>
           <div class="toggle-list" aria-label="显示内容">
-            <label class="toggle-row"><span>人体表面<small>连续外形示意</small></span><button class="switch on" data-layer="surface" role="switch" aria-checked="true" aria-label="人体表面"><i></i></button></label>
-            <label class="toggle-row"><span>解剖骨骼与关节</span><button class="switch on" data-layer="skeleton" role="switch" aria-checked="true" aria-label="解剖骨骼与关节"><i></i></button></label>
+            <label class="toggle-row"><span>人体表面<small>连续蒙皮 / 外形</small></span><button class="switch on" data-layer="surface" role="switch" aria-checked="true" aria-label="人体表面"><i></i></button></label>
+            <label class="toggle-row"><span>解剖骨骼与关节</span><button class="switch" data-layer="skeleton" role="switch" aria-checked="false" aria-label="解剖骨骼与关节"><i></i></button></label>
             <label class="toggle-row"><span>关节坐标轴</span><button class="switch" data-layer="axes" role="switch" aria-checked="false" aria-label="关节坐标轴"><i></i></button></label>
             <label class="toggle-row"><span>地面接触反力</span><button class="switch on" data-layer="grf" role="switch" aria-checked="true" aria-label="地面接触反力"><i></i></button></label>
             <label class="toggle-row"><span>肌腱作用路径</span><button class="switch on" data-layer="tendons" role="switch" aria-checked="true" aria-label="肌腱作用路径"><i></i></button></label>

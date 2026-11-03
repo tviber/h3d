@@ -4,6 +4,14 @@ import { createMuscleSystem, evaluateMuscles, type MuscleState } from './muscle-
 import { type MjModel, type Mujoco } from './mujoco.ts';
 
 export type Vec3 = [number, number, number];
+export type Quat = [number, number, number, number];
+export interface RigidBodySpec {
+  id: number;
+  name: string;
+  parent: string | null;
+  restPosition: Vec3;
+  restQuaternion: Quat;
+}
 export interface GroundContact { name: string; position: Vec3; force: Vec3 }
 export interface MuscleRecording {
   dt: number;
@@ -13,6 +21,9 @@ export interface MuscleRecording {
   joints: string[];
   jointTypes: Record<string, 'hinge' | 'slide'>;
   muscles: string[];
+  bodies: RigidBodySpec[];
+  bodyPositions: Map<string, [Float64Array, Float64Array, Float64Array]>;
+  bodyQuaternions: Map<string, [Float64Array, Float64Array, Float64Array, Float64Array]>;
   positions: Map<string, [Float64Array, Float64Array, Float64Array]>;
   com: [Float64Array, Float64Array, Float64Array];
   kineticEnergy: Float64Array;
@@ -315,6 +326,17 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
   const com: MuscleRecording['com'] = [new Float64Array(n), new Float64Array(n), new Float64Array(n)];
   const kineticEnergy = new Float64Array(n), potentialEnergy = new Float64Array(n);
   for (const [name] of siteIds) positions.set(name, [new Float64Array(n), new Float64Array(n), new Float64Array(n)]);
+  const bodies: RigidBodySpec[] = [];
+  const bodyPositions = new Map<string, [Float64Array, Float64Array, Float64Array]>();
+  const bodyQuaternions = new Map<string, [Float64Array, Float64Array, Float64Array, Float64Array]>();
+  for (let id = 1; id < model.nbody; id++) {
+    const name = mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY.value, id) || `body-${id}`;
+    const parentId = model.body_parentid[id];
+    const parent = parentId > 0 ? (mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY.value, parentId) || `body-${parentId}`) : null;
+    bodies.push({ id, name, parent, restPosition: [0, 0, 0], restQuaternion: [1, 0, 0, 0] });
+    bodyPositions.set(name, [new Float64Array(n), new Float64Array(n), new Float64Array(n)]);
+    bodyQuaternions.set(name, [new Float64Array(n), new Float64Array(n), new Float64Array(n), new Float64Array(n)]);
+  }
   const jointColumns = new Map<string, Float64Array>();
   for (const prefix of ['angle', 'velocity', 'acceleration', 'torque', 'requested_torque', 'saturation_ratio', 'torque_error', 'power', 'passive_torque', 'constraint_torque', 'work']) {
     for (const name of joints) jointColumns.set(`${prefix}_${name}`, new Float64Array(n));
@@ -341,6 +363,12 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
   const nominalTimestep = model.opt.timestep;
   try {
     mj.mj_resetData(model, data);
+    mj.mj_forward(model, data);
+    for (const body of bodies) {
+      const pOffset = body.id * 3, qOffset = body.id * 4;
+      body.restPosition = [data.xpos[pOffset], data.xpos[pOffset + 1], data.xpos[pOffset + 2]];
+      body.restQuaternion = [data.xquat[qOffset], data.xquat[qOffset + 1], data.xquat[qOffset + 2], data.xquat[qOffset + 3]];
+    }
     for (const [name, value] of Object.entries(experiment.initialPoseRad)) {
       const id = jointIds.get(name);
       if (id === undefined) throw new Error(`${experiment.id}: model has no joint named "${name}"`);
@@ -387,6 +415,13 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
       for (const [name, id] of siteIds) {
         const destination = positions.get(name)!;
         for (let axis = 0; axis < 3; axis++) destination[axis][k] = data.site_xpos[id * 3 + axis];
+      }
+      for (const body of bodies) {
+        const posDest = bodyPositions.get(body.name)!;
+        const quatDest = bodyQuaternions.get(body.name)!;
+        const pOffset = body.id * 3, qOffset = body.id * 4;
+        for (let axis = 0; axis < 3; axis++) posDest[axis][k] = data.xpos[pOffset + axis];
+        for (let comp = 0; comp < 4; comp++) quatDest[comp][k] = data.xquat[qOffset + comp];
       }
       evaluated.states.forEach((state: MuscleState, i) => {
         const power = -state.force * state.tendonVelocity;
@@ -443,7 +478,7 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
     data.delete();
   }
   return {
-    dt, duration, n, times, joints, jointTypes, muscles: muscleNames, positions, com, kineticEnergy, potentialEnergy, jointColumns, muscleColumns,
+    dt, duration, n, times, joints, jointTypes, muscles: muscleNames, bodies, bodyPositions, bodyQuaternions, positions, com, kineticEnergy, potentialEnergy, jointColumns, muscleColumns,
     regionalPower, grf, centerOfPressure, hasCenterOfPressure, contactCount, feet, contacts, wrapPaths,
     validation: { momentArmFdMaxAbsErr, torqueMatchMaxAbsErr },
   };
@@ -463,6 +498,8 @@ function trajectoryFinite(recording: MuscleRecording): boolean {
   if (!withinFiniteRange(recording.times, 1e6) || !withinFiniteRange(recording.kineticEnergy, 1e9) || !withinFiniteRange(recording.potentialEnergy, 1e9)) return false;
   for (const axis of recording.com) if (!withinFiniteRange(axis, 10)) return false;
   for (const values of recording.positions.values()) for (const axis of values) if (!withinFiniteRange(axis, 10)) return false;
+  for (const values of recording.bodyPositions.values()) for (const axis of values) if (!withinFiniteRange(axis, 10)) return false;
+  for (const values of recording.bodyQuaternions.values()) for (const comp of values) if (!withinFiniteRange(comp, 1.001)) return false;
   for (const [name, values] of recording.jointColumns) {
     const limit = name.startsWith('angle_') ? (recording.jointTypes[name.slice('angle_'.length)] === 'slide' ? 10 : 4 * Math.PI)
       : name.startsWith('velocity_') ? 100
