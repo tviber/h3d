@@ -36,6 +36,16 @@ export interface MuscleSystem {
 
 const clamp = (value: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, value));
 
+/** Continuous, bounded Hill-style force-velocity factor; positive velocity means tendon lengthening. */
+export function forceVelocityCurve(normalizedVelocity: number): number {
+  if (!Number.isFinite(normalizedVelocity)) throw new Error('normalized muscle velocity must be finite');
+  if (normalizedVelocity <= -1) return 0;
+  if (normalizedVelocity <= 0) return (1 + normalizedVelocity) / (1 - normalizedVelocity / 1.5);
+  const slopeAtIsometric = 1 + 1 / 1.5;
+  const eccentricRange = 0.8;
+  return 1 + (eccentricRange * slopeAtIsometric * normalizedVelocity) / (eccentricRange + slopeAtIsometric * normalizedVelocity);
+}
+
 /** Resolves named MuJoCo tendons and prepares their sparse Jacobian row layout. */
 export function createMuscleSystem(
   mj: Mujoco,
@@ -81,7 +91,7 @@ export function evaluateMuscles(
     const normalizedLength = fiberLength / muscle.optimalFiberLength;
     const forceLengthFactor = Math.exp(-(((normalizedLength - 1) / 0.45) ** 2));
     const normalizedVelocity = tendonVelocity / (muscle.maxContractionVelocity * muscle.optimalFiberLength);
-    const forceVelocityFactor = clamp((1 + normalizedVelocity) / (1 - normalizedVelocity / 1.5), 0, 1.8);
+    const forceVelocityFactor = forceVelocityCurve(normalizedVelocity);
     const passiveForce = muscle.maxIsometricForce * 0.015 * Math.max(0, Math.exp(4 * Math.max(0, normalizedLength - 1)) - 1);
     const activation = clamp(activations[i], 0, 1);
     const activeForce = activation * muscle.maxIsometricForce * forceLengthFactor * forceVelocityFactor;
