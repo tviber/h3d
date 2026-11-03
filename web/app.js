@@ -116,6 +116,7 @@ function renderScene(activeClip,frame){
   if(positions.shoulder&&!positions.rightShoulder)positions.rightShoulder=positions.shoulder;
   if(positions.elbow&&!positions.rightElbow)positions.rightElbow=positions.elbow;
   if(positions.wrist&&!positions.rightWrist)positions.rightWrist=positions.wrist;
+  if(positions.hand&&!positions.rightHand)positions.rightHand=positions.hand;
   const identity=identityAxes();
   if(layerState.surface){
     for(const segment of activeClip.rig.segments){const a=positions[segment.from],b=positions[segment.to];if(a&&b)drawRod(a,b,segment.radius,segmentColors[segment.group]);}
@@ -176,8 +177,9 @@ function updatePanel(activeClip,frame,now){
 function describeClip(activeClip){
   if(activeClip.id==='squat-to-stand')return{description:'从深蹲位开始，依靠髋、膝、踝肌群伸展起立。足底接触反力由 MuJoCo 接触求解得到。',focus:['髋膝伸展','重心控制','足底支撑']};
   if(activeClip.id==='countermovement-drive')return{description:'先快速下沉，再通过髋膝踝伸展完成蹬伸，回到双足支撑。',focus:['反向动作','肌肉协同','地面反力']};
+  if(activeClip.id==='shoulder-elbow')return{description:'右上臂先从自然下垂位置抬至接近水平，再保持肩位完成高位绳索弯举式屈肘。前束三角肌维持肩位，肱二头肌与肱肌屈肘，肱三头肌拮抗。',focus:['水平抬臂','高位屈肘','肩肘协同']};
   if(activeClip.rig.kind==='elbow')return{description:'肱二头肌屈肘，肱三头肌拮抗制动；肌腱路径实时决定力臂。',focus:['单关节','拮抗肌','力臂']};
-  return{description:'肱二头肌长头与肱三头肌长头跨肩、肘两关节；肱肌和三角肌提供单关节作用。',focus:['双关节肌','肩肘协同','肌腱路径']};
+  return{description:'双关节肌和单关节肌共同产生关节力矩，肌腱路径实时决定力臂。',focus:['双关节肌','肩肘协同','肌腱路径']};
 }
 function setClip(index){
   clip=clips[index];time=0;playing=false;lastFrame=0;playButton.textContent='▶';playButton.setAttribute('aria-label','播放动作');scrubber.value='0';

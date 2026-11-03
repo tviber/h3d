@@ -32,9 +32,9 @@ export interface MotionClip {
 const STATIC_POSITIONS: Record<string, Vec3> = {
   pelvis: [0, 0, 0.93], waist: [0, 0, 1.05], neck: [0, 0, 1.37], head: [0, 0, 1.56],
   leftShoulder: [0, 0.18, 1.35], rightShoulder: [0, -0.18, 1.35],
-  leftElbow: [0, 0.27, 1.08], rightElbow: [0, -0.27, 1.08],
-  leftWrist: [0, 0.28, 0.83], rightWrist: [0, -0.28, 0.83],
-  leftHand: [0.02, 0.28, 0.78], rightHand: [0.02, -0.28, 0.78],
+  leftElbow: [0, 0.18, 1.068], rightElbow: [0, -0.18, 1.068],
+  leftWrist: [0, 0.18, 0.799], rightWrist: [0, -0.18, 0.799],
+  leftHand: [0.02, 0.18, 0.748], rightHand: [0.02, -0.18, 0.748],
   leftHip: [0, 0.095, 0.9], rightHip: [0, -0.095, 0.9],
   leftKnee: [0, 0.1, 0.48], rightKnee: [0, -0.1, 0.48],
   leftAnkle: [0, 0.1, 0.07], rightAnkle: [0, -0.1, 0.07],
@@ -80,6 +80,7 @@ export function toMotionClip(experiment: MuscleExperiment, recording: MuscleReco
     if (positions.shoulder && !positions.rightShoulder) positions.rightShoulder = positions.shoulder;
     if (positions.elbow && !positions.rightElbow) positions.rightElbow = positions.elbow;
     if (positions.wrist && !positions.rightWrist) positions.rightWrist = positions.wrist;
+    if (positions.hand && !positions.rightHand) positions.rightHand = positions.hand;
     const joints = Object.fromEntries(recording.joints.map((name) => [name, {
       angle: recording.jointColumns.get(`angle_${name}`)![k],
       velocity: recording.jointColumns.get(`velocity_${name}`)![k],

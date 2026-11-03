@@ -7,7 +7,7 @@ import { toMotionClip } from './motion-clip.ts';
 import { fileURLToPath } from 'node:url';
 import { getMujoco, loadModel } from './mujoco.ts';
 
-const usage = `h3d muscles: run the experimental muscle-driven elbow models\n\nUsage:\n  node src/muscle-cli.ts [--config experiments/muscle-demo.json] [--out web/demo-motion.json] [--only <id> ...]`;
+const usage = `h3d muscles: run the muscle-driven dynamics experiments\n\nUsage:\n  node src/muscle-cli.ts [--config experiments/muscle-demo.json] [--out web/demo-motion.json] [--only <id> ...]`;
 
 async function main(args: string[]): Promise<number> {
   const parsed = parseArgs({
@@ -39,6 +39,8 @@ async function main(args: string[]): Promise<number> {
       model.delete();
     }
   }
+  const invalidRun = runs.find((run) => !run.summary.validation.trajectoryFinite);
+  if (invalidRun) throw new Error(`${invalidRun.experiment.id}: trajectory contains non-finite or out-of-range values; motion export aborted`);
   mkdirSync(dirname(outPath), { recursive: true });
   const output = {
     schemaVersion: 'h3d.motion-set.v1',
@@ -47,12 +49,17 @@ async function main(args: string[]): Promise<number> {
   };
   writeFileSync(outPath, JSON.stringify(output) + '\n');
   for (const run of runs) {
+    const saturated = run.summary.joints.filter((joint) => joint.saturated).map((joint) =>
+      `${joint.name} ${joint.peakSaturationRatio.toFixed(2)}x (requested ${joint.peakRequestedTorque.toFixed(1)}, applied ${joint.peakAppliedTorque.toFixed(1)} N·m)`,
+    ).join(', ') || 'none';
+    const validation = run.summary.validation;
     console.log(`${run.experiment.id}: ${run.summary.joints.map((joint) => {
       const unit = run.recording.jointTypes[joint.name] === 'slide' ? 'm/s' : 'rad/s';
       return `${joint.name} ${joint.peakSpeed.toFixed(2)} ${unit}`;
     }).join(', ')}; ` +
       `${run.summary.muscles.map((muscle) => `${muscle.name} ${muscle.peakForce.toFixed(0)} N`).join(', ')}` +
-      (run.experiment.rig.kind === 'lower-body' ? `; peak GRF ${run.summary.peakVerticalGroundReactionForce.toFixed(0)} N` : ''));
+      (run.experiment.rig.kind === 'lower-body' ? `; peak GRF ${run.summary.peakVerticalGroundReactionForce.toFixed(0)} N` : '') +
+      `; saturated ${saturated}; checks armFD ${validation.momentArmFdMaxAbsErr.toExponential(1)} m, torque ${validation.torqueMatchMaxAbsErr.toExponential(1)} N·m, work ${validation.workConsistencyRelErr.toExponential(1)}; finite ${validation.trajectoryFinite}`);
   }
   console.log(`wrote ${runs.length} motion clip(s) to ${outPath}`);
   return 0;
