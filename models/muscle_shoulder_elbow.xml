@@ -4,36 +4,39 @@
     <flag contact="disable" energy="enable"/>
   </option>
   <default>
-    <joint type="hinge" axis="0 0 1" damping="0.08" armature="0.002"/>
+    <joint type="hinge" axis="0 -1 0" damping="0.32" armature="0.003"/>
     <geom contype="0" conaffinity="0" rgba="0.74 0.53 0.42 1"/>
     <site size="0.008" rgba="0.9 0.2 0.15 1"/>
     <motor ctrlrange="-1 1" ctrllimited="true"/>
   </default>
   <worldbody>
-    <body name="torso" pos="0 -0.19 1.436">
-      <site name="biceps_origin" pos="0.035 -0.075 0"/>
-      <site name="triceps_origin" pos="-0.04 -0.075 0"/>
-      <site name="deltoid_origin" pos="-0.06 -0.09 0"/>
+    <body name="torso" pos="0 -0.18 1.35">
+      <site name="biceps_origin" pos="0.035 0 0.045"/>
+      <site name="triceps_origin" pos="-0.04 0 -0.035"/>
+      <site name="deltoid_origin" pos="-0.055 0 0.035"/>
+      <site name="anterior_deltoid_origin" pos="0.06 0 0.055"/>
       <body name="upper_arm">
-        <joint name="shoulder_flex" range="-1.396 2.094"/>
-        <inertial pos="0 -0.141 0" mass="2.033" diaginertia="0.0131 0.0117 0.0040"/>
-        <geom name="upper_arm_visual" type="capsule" fromto="0 0 0 0 -0.282 0" size="0.045"/>
+        <joint name="shoulder_flex" range="-1.05 2.094"/>
+        <inertial pos="0 0 -0.141" mass="2.033" diaginertia="0.0131 0.0117 0.0040"/>
+        <geom name="upper_arm_visual" type="capsule" fromto="0 0 0 0 0 -0.282" size="0.045"/>
         <site name="shoulder"/>
-        <site name="biceps_guide" pos="0.035 -0.18 0"/>
-        <site name="triceps_guide" pos="-0.04 -0.18 0"/>
-        <site name="deltoid_insertion" pos="-0.035 -0.19 0"/>
-        <site name="brachialis_origin" pos="0.04 -0.16 0"/>
-        <site name="triceps_side" pos="-0.055 -0.282 0"/>
-        <geom name="triceps_wrap" type="cylinder" pos="0 -0.282 0" zaxis="0 0 1" size="0.019 0.035" rgba="0.2 0.4 0.8 0.25"/>
-        <body name="forearm" pos="0 -0.282 0">
+        <site name="biceps_guide" pos="0.035 0 -0.16"/>
+        <site name="triceps_guide" pos="-0.04 0 -0.16"/>
+        <site name="deltoid_insertion" pos="-0.035 0 -0.15"/>
+        <site name="anterior_deltoid_insertion" pos="0.06 0 -0.14"/>
+        <site name="brachialis_origin" pos="0.04 0 -0.16"/>
+        <site name="triceps_side" pos="-0.055 0 -0.282"/>
+        <geom name="triceps_wrap" type="cylinder" pos="0 0 -0.282" zaxis="0 1 0" size="0.019 0.035" rgba="0.2 0.4 0.8 0.25"/>
+        <body name="forearm" pos="0 0 -0.282">
           <joint name="elbow_flex" range="0 2.53"/>
-          <inertial pos="0 -0.1345 0" mass="1.215" diaginertia="0.0067 0.0062 0.0013"/>
-          <geom name="forearm_visual" type="capsule" fromto="0 0 0 0 -0.269 0" size="0.035" rgba="0.86 0.68 0.56 1"/>
+          <inertial pos="0 0 -0.1345" mass="1.215" diaginertia="0.0067 0.0062 0.0013"/>
+          <geom name="forearm_visual" type="capsule" fromto="0 0 0 0 0 -0.269" size="0.035" rgba="0.86 0.68 0.56 1"/>
           <site name="elbow"/>
-          <site name="wrist" pos="0 -0.269 0" rgba="0.2 0.4 0.9 1"/>
-          <site name="biceps_insertion" pos="0.03 -0.05 0"/>
-          <site name="triceps_insertion" pos="-0.03 -0.05 0"/>
-          <site name="brachialis_insertion" pos="0.03 -0.04 0"/>
+          <site name="wrist" pos="0 0 -0.269" rgba="0.2 0.4 0.9 1"/>
+          <site name="hand" pos="0.02 0 -0.32" rgba="0.2 0.4 0.9 1"/>
+          <site name="biceps_insertion" pos="0.03 0 -0.05"/>
+          <site name="triceps_insertion" pos="-0.03 0 -0.05"/>
+          <site name="brachialis_insertion" pos="0.03 0 -0.04"/>
         </body>
       </body>
     </body>
@@ -43,7 +46,7 @@
       <site site="biceps_origin"/><site site="biceps_guide"/><site site="biceps_insertion"/>
     </spatial>
     <spatial name="triceps_long_head" width="0.012" rgba="0.2 0.4 0.9 1">
-      <site site="triceps_origin"/><site site="triceps_guide"/><site site="triceps_insertion"/>
+      <site site="triceps_origin"/><site site="triceps_guide"/><geom geom="triceps_wrap" sidesite="triceps_side"/><site site="triceps_insertion"/>
     </spatial>
     <spatial name="brachialis" width="0.010" rgba="0.95 0.55 0.15 1">
       <site site="brachialis_origin"/>
@@ -51,6 +54,9 @@
     </spatial>
     <spatial name="posterior_deltoid" width="0.010" rgba="0.25 0.75 0.4 1">
       <site site="deltoid_origin"/><site site="deltoid_insertion"/>
+    </spatial>
+    <spatial name="anterior_deltoid" width="0.010" rgba="0.25 0.75 0.4 1">
+      <site site="anterior_deltoid_origin"/><site site="anterior_deltoid_insertion"/>
     </spatial>
   </tendon>
   <actuator>

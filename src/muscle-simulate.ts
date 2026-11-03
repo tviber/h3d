@@ -56,7 +56,7 @@ export interface MuscleRunSummary {
 export interface MuscleRun { experiment: MuscleExperiment; recording: MuscleRecording; summary: MuscleRunSummary }
 
 const SITE_NAMES = [
-  'shoulder', 'elbow', 'wrist', 'pelvis', 'waist', 'neck', 'head',
+  'shoulder', 'elbow', 'wrist', 'hand', 'pelvis', 'waist', 'neck', 'head',
   'leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow', 'leftWrist', 'rightWrist', 'leftHand', 'rightHand',
   'leftHip', 'rightHip', 'leftKnee', 'rightKnee', 'leftAnkle', 'rightAnkle', 'leftHeel', 'rightHeel', 'leftToe', 'rightToe',
 ] as const;

@@ -19,7 +19,7 @@ h3d 是以肌肉骨骼动力学与控制为主线的研究原型，使用 MuJoCo
 - 控制：力矩 = f(关节, 时间)，由平滑脉冲叠加（峰值、起始时间、持续时间、方向，可选 sin² 或平台形状）。
 - 每个实验记录：时间、qpos/qvel/qacc、实际执行器力矩、关节功率、累计功、拍头（弦床中心）位置/速度/加速度（雅可比计算，并用有限差分交叉校验）、动能/势能、角动量，以及各关节对拍头速度的贡献分解。
 - A/B/C 对比：共用同一个模型、同一个初始姿态、同一组手臂力矩脉冲对象，自动生成 CSV、JSON、Markdown 报告和 5 张 PNG 图。
-- CLI（`compare`、`run`、`info`），57 个 `node:test` 测试，GitHub Actions CI（类型检查、测试、CLI 冒烟）。
+- CLI（`compare`、`run`、`info`），58 个 `node:test` 测试，GitHub Actions CI（类型检查、测试、CLI 冒烟）。
 
 v0.0.1 的五自由度球拍模型仍是理想力矩电机模型；下面新增的肌肉实验使用独立 MJCF 和模拟模块，不改变 A/B/C 既有结果。
 
@@ -27,8 +27,8 @@ v0.0.1 的五自由度球拍模型仍是理想力矩电机模型；下面新增�
 
 现有四组肌肉驱动实验：
 
-- `single-elbow`：肘单关节、肱二头肌与肱三头肌对抗。
-- `shoulder-elbow`：肩和肘两个自由度，含跨关节肱二头肌长头、肱三头肌长头，以及肱肌、后束三角肌。
+- `single-elbow`：站姿下垂上臂与矢状面肘屈伸（肱二头肌抗重力弯举、肱三头肌拮抗）。
+- `shoulder-elbow`：上臂先从自然下垂位置抬至接近水平，再保持肩位屈肘，模拟高位绳索弯举；包含肱二头肌长头、肱三头肌长头、肱肌、前束与后束三角肌。
 - `squat-to-stand`：浮动根部、骨盆、躯干、髋膝踝与四点足底接触，从深蹲起立。
 - `countermovement-drive`：先下沉，再通过髋膝踝肌群完成向上蹬伸。
 
@@ -166,7 +166,7 @@ b.plot(x="time", y=["head_speed", "butt_speed"])
 
 ```sh
 npm run typecheck   # tsc --noEmit
-npm test            # node:test，57 个测试，约 3 s
+npm test            # node:test，58 个测试，约 3 s
 npm run smoke       # CLI 冒烟：compare --no-png 写到 out/smoke
 ```
 

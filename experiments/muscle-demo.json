@@ -2,37 +2,57 @@
   "experiments": [
     {
       "id": "single-elbow",
-      "label": "肘关节：肱二头肌 / 肱三头肌",
+      "label": "肘关节：站姿肱二头肌弯举",
       "model": "../models/muscle_elbow.xml",
       "duration": 0.85,
-      "initialPoseRad": { "elbow_flex": 0.55 },
+      "initialPoseRad": { "elbow_flex": 0.30 },
       "muscles": [
         { "name": "biceps", "tendon": "biceps", "maxIsometricForce": 700, "optimalFiberLength": 0.12, "tendonSlackLength": 0.042, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
         { "name": "triceps", "tendon": "triceps", "maxIsometricForce": 850, "optimalFiberLength": 0.12, "tendonSlackLength": 0.042, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 }
       ],
       "controllers": [
-        { "muscle": "biceps", "baseline": 0.02, "pulses": [{ "muscle": "biceps", "level": 0.65, "start": 0.08, "duration": 0.38, "riseTime": 0.08 }] },
-        { "muscle": "triceps", "baseline": 0.02, "pulses": [{ "muscle": "triceps", "level": 0.34, "start": 0.43, "duration": 0.28, "riseTime": 0.07 }] }
+        { "muscle": "biceps", "baseline": 0.09, "pulses": [{ "muscle": "biceps", "level": 0.40, "start": 0.08, "duration": 0.45, "riseTime": 0.10 }] },
+        { "muscle": "triceps", "baseline": 0.02, "pulses": [{ "muscle": "triceps", "level": 0.10, "start": 0.55, "duration": 0.22, "riseTime": 0.08 }] }
       ],
       "rig": { "kind": "elbow" }
     },
     {
       "id": "shoulder-elbow",
-      "label": "肩 + 肘：双关节肌与单关节肌",
+      "label": "肩 + 肘：水平抬臂后高位弯举",
       "model": "../models/muscle_shoulder_elbow.xml",
-      "duration": 0.9,
-      "initialPoseRad": { "shoulder_flex": -0.28, "elbow_flex": 0.62 },
+      "duration": 1.3,
+      "initialPoseRad": { "shoulder_flex": 0.0, "elbow_flex": 0.15 },
       "muscles": [
-        { "name": "biceps_long_head", "tendon": "biceps_long_head", "maxIsometricForce": 650, "optimalFiberLength": 0.16, "tendonSlackLength": 0.09, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
-        { "name": "triceps_long_head", "tendon": "triceps_long_head", "maxIsometricForce": 750, "optimalFiberLength": 0.16, "tendonSlackLength": 0.09, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
-        { "name": "brachialis", "tendon": "brachialis", "maxIsometricForce": 500, "optimalFiberLength": 0.105, "tendonSlackLength": 0.055, "maxContractionVelocity": 10, "activationTimeConstant": 0.012, "deactivationTimeConstant": 0.045 },
-        { "name": "posterior_deltoid", "tendon": "posterior_deltoid", "maxIsometricForce": 550, "optimalFiberLength": 0.075, "tendonSlackLength": 0.025, "maxContractionVelocity": 10, "activationTimeConstant": 0.02, "deactivationTimeConstant": 0.06 }
+        { "name": "biceps_long_head", "tendon": "biceps_long_head", "maxIsometricForce": 650, "optimalFiberLength": 0.16, "tendonSlackLength": 0.20, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "triceps_long_head", "tendon": "triceps_long_head", "maxIsometricForce": 750, "optimalFiberLength": 0.16, "tendonSlackLength": 0.15, "maxContractionVelocity": 10, "activationTimeConstant": 0.015, "deactivationTimeConstant": 0.05 },
+        { "name": "brachialis", "tendon": "brachialis", "maxIsometricForce": 500, "optimalFiberLength": 0.105, "tendonSlackLength": 0.042, "maxContractionVelocity": 10, "activationTimeConstant": 0.012, "deactivationTimeConstant": 0.045 },
+        { "name": "posterior_deltoid", "tendon": "posterior_deltoid", "maxIsometricForce": 550, "optimalFiberLength": 0.075, "tendonSlackLength": 0.115, "maxContractionVelocity": 10, "activationTimeConstant": 0.02, "deactivationTimeConstant": 0.06 },
+        { "name": "anterior_deltoid", "tendon": "anterior_deltoid", "maxIsometricForce": 500, "optimalFiberLength": 0.12, "tendonSlackLength": 0.03, "maxContractionVelocity": 10, "activationTimeConstant": 0.018, "deactivationTimeConstant": 0.055 }
       ],
       "controllers": [
-        { "muscle": "biceps_long_head", "baseline": 0.02, "pulses": [{ "muscle": "biceps_long_head", "level": 0.60, "start": 0.08, "duration": 0.36, "riseTime": 0.08 }] },
-        { "muscle": "triceps_long_head", "baseline": 0.02, "pulses": [{ "muscle": "triceps_long_head", "level": 0.34, "start": 0.44, "duration": 0.3, "riseTime": 0.07 }] },
-        { "muscle": "brachialis", "baseline": 0.02, "pulses": [{ "muscle": "brachialis", "level": 0.34, "start": 0.08, "duration": 0.36, "riseTime": 0.08 }] },
-        { "muscle": "posterior_deltoid", "baseline": 0.02, "pulses": [{ "muscle": "posterior_deltoid", "level": 0.3, "start": 0.44, "duration": 0.3, "riseTime": 0.07 }] }
+        { "muscle": "biceps_long_head", "baseline": 0.08, "pulses": [] },
+        { "muscle": "triceps_long_head", "baseline": 0.04, "pulses": [] },
+        { "muscle": "brachialis", "baseline": 0.08, "pulses": [] },
+        { "muscle": "posterior_deltoid", "baseline": 0.03, "pulses": [] },
+        { "muscle": "anterior_deltoid", "baseline": 0.12, "pulses": [] }
+      ],
+      "feedback": {
+        "type": "trajectory",
+        "keyframes": [
+          { "time": 0, "joints": { "shoulder_flex": 0.0, "elbow_flex": 0.15 } },
+          { "time": 0.48, "joints": { "shoulder_flex": 1.35, "elbow_flex": 0.15 } },
+          { "time": 0.62, "joints": { "shoulder_flex": 1.45, "elbow_flex": 0.15 } },
+          { "time": 1.05, "joints": { "shoulder_flex": 1.45, "elbow_flex": 1.55 } },
+          { "time": 1.3, "joints": { "shoulder_flex": 1.45, "elbow_flex": 1.55 } }
+        ],
+        "gains": { "shoulder_flex": { "kp": 50, "kd": 14 }, "elbow_flex": { "kp": 32, "kd": 8 } },
+        "jointWeights": { "shoulder_flex": 1, "elbow_flex": 1.4 },
+        "effortRegularization": 0.1
+      },
+      "phases": [
+        { "label": "水平抬臂", "start": 0, "end": 0.62 },
+        { "label": "高位屈肘", "start": 0.62, "end": 1.05 },
+        { "label": "弯举保持", "start": 1.05, "end": 1.3 }
       ],
       "rig": { "kind": "shoulder-elbow" }
     },

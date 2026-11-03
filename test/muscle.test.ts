@@ -153,9 +153,11 @@ describe('Single-elbow analytical benchmark', async () => {
       data.ctrl[0] = requestedTorque / gear;
       mj.mj_forward(model, data);
       const com = model.body_ipos.slice(forearmId * 3, forearmId * 3 + 3);
-      const effectiveInertia = model.body_inertia[forearmId * 3 + 2]
-        + model.body_mass[forearmId] * (com[0] ** 2 + com[1] ** 2)
+      const effectiveInertia = model.body_inertia[forearmId * 3 + 1]
+        + model.body_mass[forearmId] * (com[0] ** 2 + com[2] ** 2)
         + model.dof_armature[dof];
+      const analyticalGravityTorque = model.body_mass[forearmId] * 9.81 * Math.abs(com[2]) * Math.sin(data.qpos[qadr]);
+      assert.ok(Math.abs(data.qfrc_bias[dof] - analyticalGravityTorque) < 1e-9, 'standing curl must oppose forearm gravity');
       const analyticalAcceleration = (
         data.qfrc_actuator[dof] + data.qfrc_passive[dof] + data.qfrc_constraint[dof] - data.qfrc_bias[dof]
       ) / effectiveInertia;
@@ -181,9 +183,13 @@ describe('Single-elbow analytical benchmark', async () => {
     const actuatorWork = recording.jointColumns.get(`work_${joint}`)!.at(-1)!;
     const passiveWork = trapPower('passive_torque');
     const limitWork = trapPower('constraint_torque');
+    const angles = recording.jointColumns.get(`angle_${joint}`)!;
+    const constraints = recording.jointColumns.get(`constraint_torque_${joint}`)!;
     const deltaEnergy = recording.kineticEnergy.at(-1)! - recording.kineticEnergy[0]
       + recording.potentialEnergy.at(-1)! - recording.potentialEnergy[0];
     const energyResidual = Math.abs(actuatorWork + passiveWork + limitWork - deltaEnergy);
+    assert.ok(Math.min(...angles) > 0.05 && Math.max(...angles) < 2.25, 'standing curl should stay inside physiological elbow range');
+    assert.ok(Math.max(...constraints.map(Math.abs)) < 1e-9, 'standing curl should not collide with joint limits');
     assert.ok(Math.abs(muscleWork - actuatorWork) / Math.max(1, Math.abs(actuatorWork)) < 0.002);
     assert.ok(energyResidual / Math.max(1, Math.abs(actuatorWork)) < 0.02);
     assert.ok(summary.validation.momentArmFdMaxAbsErr < 1e-6);
@@ -396,6 +402,51 @@ describe('MotionClip and frontend decoupling', async () => {
     assert.ok(clip.samples.some((sample) => sample.contacts.length > 0));
     assert.ok(clip.samples.every((sample) => sample.com.length === 3));
     assert.deepEqual(clip.phases.map((phase) => phase.label), ['下蹲准备', '伸展起立', '站立稳定']);
+  });
+
+  it('keeps exported arm segment lengths rigid, continuous, and aligned in front/side/top projections', async () => {
+    const distance = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    const distance2d = (a: readonly number[], b: readonly number[], i: number, j: number) => Math.hypot(a[i] - b[i], a[j] - b[j]);
+    for (const id of ['single-elbow', 'shoulder-elbow'] as const) {
+      const { experiment, recording } = await runExperiment(id);
+      const constraints = recording.joints.flatMap((joint) => Array.from(recording.jointColumns.get(`constraint_torque_${joint}`)!));
+      assert.ok(Math.max(...constraints.map(Math.abs)) < 1e-9, `${id} should not hit joint limits`);
+      const clip = toMotionClip(experiment, recording);
+      const expectedHand = Math.hypot(0.02, 0.051);
+      for (let k = 0; k < clip.samples.length; k++) {
+        const positions = { ...clip.rig.staticPositions, ...clip.samples[k].positions };
+        const shoulder = positions.rightShoulder, elbow = positions.rightElbow, wrist = positions.rightWrist, hand = positions.rightHand;
+        assert.ok(clip.samples[k].positions.rightHand, `${id} frame ${k} must export dynamic rightHand`);
+        assert.ok(Math.abs(distance(shoulder, elbow) - 0.282) < 1e-6, `${id} upper-arm length must stay 0.282 m`);
+        assert.ok(Math.abs(distance(elbow, wrist) - 0.269) < 1e-6, `${id} forearm length must stay 0.269 m`);
+        assert.ok(Math.abs(distance(wrist, hand) - expectedHand) < 1e-6, `${id} hand segment must follow the forearm`);
+        for (const point of [shoulder, elbow, wrist, hand]) assert.ok(Math.abs(point[1] + 0.18) < 1e-6, `${id} top/front projection must stay on y = -0.18 m`);
+        for (const [a, b, max3d] of [[shoulder, elbow, 0.282], [elbow, wrist, 0.269], [wrist, hand, expectedHand]] as const) {
+          assert.ok(distance2d(a, b, 1, 2) <= max3d + 1e-6, `${id} front projection cannot exceed 3D segment length`);
+          assert.ok(distance2d(a, b, 0, 2) <= max3d + 1e-6, `${id} side projection cannot exceed 3D segment length`);
+          assert.ok(distance2d(a, b, 0, 1) <= max3d + 1e-6, `${id} top projection cannot exceed 3D segment length`);
+        }
+        if (k > 0) {
+          const previous = { ...clip.rig.staticPositions, ...clip.samples[k - 1].positions };
+          for (const key of ['rightShoulder', 'rightElbow', 'rightWrist', 'rightHand'] as const) {
+            assert.ok(distance(positions[key], previous[key]) < 0.06, `${id} ${key} must move continuously between frames`);
+          }
+        }
+      }
+      const wristX = clip.samples.map((sample) => sample.positions.rightWrist[0]);
+      const wristZ = clip.samples.map((sample) => sample.positions.rightWrist[2]);
+      assert.ok(Math.max(...wristX) - Math.min(...wristX) > 0.15, `${id} side view must show forward curl excursion`);
+      assert.ok(Math.max(...wristZ) - Math.min(...wristZ) > 0.20, `${id} front/side views must show vertical curl excursion`);
+      if (id === 'shoulder-elbow') {
+        const shoulder = recording.jointColumns.get('angle_shoulder_flex')!;
+        const elbow = recording.jointColumns.get('angle_elbow_flex')!;
+        const frameAt = (time: number) => recording.times.findIndex((sampleTime) => sampleTime >= time);
+        assert.ok(Math.abs(shoulder[0]) < 0.05 && elbow[0] < 0.25, 'the action should start with the arm lowered and elbow nearly extended');
+        assert.ok(shoulder[frameAt(0.48)] > 1.1, 'the upper arm should rise toward horizontal before the curl phase');
+        assert.ok(shoulder.at(-1)! > 1.3, 'the shoulder should stay raised through the curl');
+        assert.ok(elbow.at(-1)! > 1.4, 'the forearm should finish near a right-angle curl');
+      }
+    }
   });
 
   it('keeps backend and viewer modules free of cross-imports', () => {
