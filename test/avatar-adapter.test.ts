@@ -159,6 +159,9 @@ test('heroic shaping preserves skin weights and the skeleton bind pose', () => {
 
   applyHeroicShape(root);
 
+  const normals = geometry.getAttribute('normal');
+  assert.ok(normals, 'shape preset did not rebuild surface normals');
+  assert.ok(Array.from(normals.array).every(Number.isFinite), 'shape preset produced non-finite normals');
   assert.notEqual(geometry.getAttribute('position').getX(0), before, 'shape preset did not deform the fixture surface');
   assert.deepEqual(Array.from(geometry.getAttribute('skinIndex').array), skinIndices);
   assert.deepEqual(Array.from(geometry.getAttribute('skinWeight').array), skinWeights);
@@ -167,6 +170,35 @@ test('heroic shaping preserves skin weights and the skeleton bind pose', () => {
   assert.ok(skeletonBone.position.equals(bonePosition));
   assert.ok(skeletonBone.quaternion.equals(boneQuaternion));
   assert.ok(skeletonBone.scale.equals(new Vector3(1, 1, 1)));
+});
+
+test('heroic shaping blends torso and arm boundaries without elbow-region seams', () => {
+  const probes = [
+    [0.2999, 1.23, 0.12], [0.3001, 1.23, 0.12],
+    [0.3499, 1.23, 0.12], [0.3501, 1.23, 0.12],
+    [0.4, 1.1599, 0.12], [0.4, 1.1601, 0.12],
+    [0.4, 1.4599, 0.12], [0.4, 1.4601, 0.12],
+    [0, 1.8, 0],
+  ];
+  const root = new Group();
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(probes.flat(), 3));
+  geometry.setAttribute('skinIndex', new Uint16BufferAttribute(new Array(probes.length * 4).fill(0), 4));
+  geometry.setAttribute('skinWeight', new Float32BufferAttribute(
+    Array.from({ length: probes.length }, () => [1, 0, 0, 0]).flat(), 4,
+  ));
+  root.add(new SkinnedMesh(geometry, new MeshBasicMaterial()));
+
+  const original = probes.map(([, , z]) => z);
+  applyHeroicShape(root);
+  const shaped = geometry.getAttribute('position');
+  const pairs = [[0, 1], [2, 3], [4, 5], [6, 7]];
+  for (const [a, b] of pairs) {
+    const displacementA = shaped.getZ(a) - original[a];
+    const displacementB = shaped.getZ(b) - original[b];
+    assert.ok(Math.abs(displacementA - displacementB) < 1e-4,
+      `shape displacement jumps across boundary between probes ${a} and ${b}`);
+  }
 });
 
 test('MakeHuman GLB keeps its original skinning and bind matrices through retargeting', async () => {
@@ -189,8 +221,13 @@ test('MakeHuman GLB keeps its original skinning and bind matrices through retarg
     bindMatrix: mesh.bindMatrix.clone(),
     bindMatrixInverse: mesh.bindMatrixInverse.clone(),
     boneInverses: mesh.skeleton.boneInverses.map((matrix) => matrix.clone()),
+    normals: Array.from(mesh.geometry.getAttribute('normal').array),
   }));
   applyHeroicShape(gltf.scene);
+  assert.ok(savedSkinData.some((saved) => {
+    const normals = saved.mesh.geometry.getAttribute('normal').array;
+    return normals.some((value, index) => Math.abs(value - saved.normals[index]) > 1e-5);
+  }), 'heroic shape did not rebuild the MakeHuman surface normals');
   const adapter = new AvatarAdapter(gltf.scene, rigInfo);
   adapter.applyVisualMaterials();
   const bindPose = [...adapter.bones].map(([name, bone]) => ({
@@ -200,14 +237,22 @@ test('MakeHuman GLB keeps its original skinning and bind matrices through retarg
     scale: bone.scale.clone(),
   }));
   const restLengths = adapter.measureBoneLengths();
+  const armMotion = new Map<string, number>();
 
   for (const clip of motionSet.clips) {
-    const frames = [clip.samples[0], clip.samples[Math.floor(clip.samples.length / 2)], clip.samples.at(-1)!];
-    for (const frame of frames) {
+    let wristStart: Vector3 | null = null;
+    let maxWristTravel = 0;
+    for (const frame of clip.samples) {
       adapter.applyFrame(clip, frame);
       assert.ok(maxLengthError(restLengths, adapter.measureBoneLengths()) < 1e-9, `${clip.id}: GLB bone length changed`);
+      const wrist = adapter.point('wrist_R');
+      if (!wristStart) wristStart = wrist.clone();
+      maxWristTravel = Math.max(maxWristTravel, wristStart.distanceTo(wrist));
     }
+    armMotion.set(clip.id, maxWristTravel);
   }
+  assert.ok((armMotion.get('single-elbow') ?? 0) > 0.1, 'actual GLB wrist did not follow single-elbow playback');
+  assert.ok((armMotion.get('shoulder-elbow') ?? 0) > 0.3, 'actual GLB wrist did not follow shoulder-elbow playback');
   adapter.reset();
 
   for (const { name, position, quaternion, scale } of bindPose) {

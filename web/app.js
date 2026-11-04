@@ -20,6 +20,8 @@ let scene, renderer, camera, controls, avatarAdapter, skeletonHelper;
 let clips = [], clip = null, time = 0, playing = false, loop = true;
 let lastFrame = 0, lastPanelUpdate = 0, cameraDistance = 3.15;
 let avatarSelection = 'makehuman';
+let avatarLoadError = false;
+let lastFrameErrorAt = -Infinity;
 const simplifiedGroup = new THREE.Group();
 const physicalSkeletonGroup = new THREE.Group();
 const axesGroup = new THREE.Group();
@@ -282,7 +284,7 @@ function updateGroundForces(frame) {
 function syncVisibility() {
   const makeHuman = avatarSelection === 'makehuman';
   if (avatarAdapter) avatarAdapter.model.visible = makeHuman && layerState.surface;
-  simplifiedGroup.visible = !makeHuman && layerState.surface;
+  simplifiedGroup.visible = (!makeHuman || !avatarAdapter) && layerState.surface;
   physicalSkeletonGroup.visible = !makeHuman && layerState.skeleton;
   if (skeletonHelper) skeletonHelper.visible = makeHuman && layerState.skeleton;
   axesGroup.visible = layerState.axes;
@@ -454,6 +456,10 @@ function describeClip(activeClip) {
   return { description: '双关节肌和单关节肌共同产生关节力矩，肌腱路径实时决定力臂。', focus: ['双关节肌', '肩肘协同', '肌腱路径'] };
 }
 
+function updateAvatarLoading() {
+  if (clip) loading.classList.add('hidden');
+}
+
 function setClip(index) {
   clip = clips[index];
   time = 0; playing = false; lastFrame = 0;
@@ -492,7 +498,7 @@ function setClip(index) {
   controls.target.set(0, clip.rig.kind === 'lower-body' ? 0.86 : 1.0, 0);
   cameraDistance = clip.rig.kind === 'lower-body' ? 2.65 : 3.1;
   setCamera('threeQuarter');
-  loading.classList.add('hidden');
+  updateAvatarLoading();
   const frame = sampleAt(clip, time);
   renderFrame(frame);
   updatePanel(clip, frame, performance.now() + 100);
@@ -518,7 +524,7 @@ function setPlaying(value) {
 
 function renderFrame(frame) {
   if (!clip) return;
-  if (avatarAdapter) {
+  if (avatarAdapter && avatarSelection === 'makehuman') {
     avatarAdapter.applyFrame(clip, frame);
     skeletonHelper?.update();
   }
@@ -534,23 +540,45 @@ function renderFrame(frame) {
   updateTendons(frame);
 }
 
+function reportFrameError(error) {
+  setText('#data-status', '渲染错误');
+  const now = performance.now();
+  if (now - lastFrameErrorAt >= 1000) {
+    lastFrameErrorAt = now;
+    console.error('Viewer frame update failed:', error);
+  }
+}
+
 function tick(now) {
+  requestAnimationFrame(tick);
   if (clip) {
-    if (playing && lastFrame) {
-      time += ((now - lastFrame) / 1000) * Number(document.querySelector('#speed').value);
-      if (time >= clip.duration) {
-        if (loop) time %= clip.duration;
-        else { time = clip.duration; setPlaying(false); }
+    let frame;
+    try {
+      if (playing && lastFrame) {
+        time += ((now - lastFrame) / 1000) * Number(document.querySelector('#speed').value);
+        if (time >= clip.duration) {
+          if (loop) time %= clip.duration;
+          else { time = clip.duration; setPlaying(false); }
+        }
       }
+      frame = sampleAt(clip, time);
+    } catch (error) {
+      reportFrameError(error);
     }
-    const frame = sampleAt(clip, time);
-    renderFrame(frame);
-    updatePanel(clip, frame, now);
+    if (frame) {
+      try { renderFrame(frame); }
+      catch (error) { reportFrameError(error); }
+      try { updatePanel(clip, frame, now); }
+      catch (error) { reportFrameError(error); }
+    }
+  }
+  try {
     controls.update();
     renderer.render(scene, camera);
+  } catch (error) {
+    reportFrameError(error);
   }
   lastFrame = now;
-  requestAnimationFrame(tick);
 }
 
 function setCamera(name) {
@@ -565,8 +593,13 @@ function setCamera(name) {
   const direction = (directions[name] ?? directions.threeQuarter).normalize();
   camera.up.copy(name === 'top' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0));
   camera.position.copy(target).addScaledVector(direction, cameraDistance);
-  controls.update();
   document.querySelectorAll('[data-camera]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.camera === name)));
+  try {
+    controls.update();
+    renderer.render(scene, camera);
+  } catch (error) {
+    reportFrameError(error);
+  }
 }
 
 function fitView() {
@@ -586,7 +619,11 @@ function fitView() {
 function setAvatar(name) {
   avatarSelection = name;
   syncVisibility();
-  setText('#avatar-status', name === 'makehuman' ? (avatarAdapter ? 'MakeHuman CC0' : '正在载入…') : '简化连杆');
+  const status = name === 'makehuman'
+    ? (avatarAdapter ? 'MakeHuman CC0' : avatarLoadError ? '人模载入失败' : '正在载入…')
+    : (avatarLoadError ? '简化连杆 · 人模载入失败' : '简化连杆');
+  setText('#avatar-status', status);
+  updateAvatarLoading();
   if (clip) renderFrame(sampleAt(clip, time));
 }
 
@@ -620,11 +657,13 @@ async function loadAvatar() {
     scene.add(skeletonHelper);
     setText('#avatar-status', 'MakeHuman CC0');
     syncVisibility();
+    updateAvatarLoading();
     if (clip) renderFrame(sampleAt(clip, time));
   } catch (error) {
-    setText('#avatar-status', '模型载入失败');
+    avatarLoadError = true;
     console.error('MakeHuman avatar could not be loaded:', error);
     if (avatarSelection === 'makehuman') setAvatar('simplified');
+    else setText('#avatar-status', '人模载入失败');
   }
 }
 

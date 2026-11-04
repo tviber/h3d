@@ -51,18 +51,24 @@ function shapeSurface(geometry) {
   if (!bb || bb.max.y < SKIN_TOP) return;
   const pos = geometry.attributes.position;
   const n = pos.count;
+  let changed = false;
   for (let i = 0; i < n; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     let nx = x, nz = z;
-    if (y >= 0.95 && y <= 1.53 && Math.abs(x) < 0.35) {
+    const absX = Math.abs(x);
+    if (y >= 0.95 && y <= 1.53) {
       const [mx, mz] = torsoMul(y);
-      nx *= mx;
-      nz *= mz;
+      const torsoWeight = 1 - smooth((absX - 0.27) / 0.08);
+      nx *= 1 + (mx - 1) * torsoWeight;
+      nz *= 1 + (mz - 1) * torsoWeight;
     }
-    if (y >= ARM.yFrom && y <= ARM.yTo && Math.abs(x) >= ARM.xFrom) {
-      const along = Math.min((Math.abs(x) - ARM.xFrom) / (ARM.xTo - ARM.xFrom), 1);
-      const w = 1 - ARM.fade * smooth(along / 0.5);
-      nz *= 1 + (ARM.zMul - 1) * w;
+    const armAlong = (absX - ARM.xFrom) / (ARM.xTo - ARM.xFrom);
+    const armEdge = smooth(armAlong / 0.2);
+    const armTaper = 1 - ARM.fade * smooth(armAlong / 0.5);
+    const armHeight = smooth((y - ARM.yFrom) / 0.04) * smooth((ARM.yTo - y) / 0.04);
+    const armWeight = armEdge * armTaper * armHeight;
+    if (armWeight > 0) {
+      nz *= 1 + (ARM.zMul - 1) * armWeight;
     }
     if (y >= LEG.yFrom && y <= LEG.yTo && Math.abs(nx) < 0.25) {
       const w = 1 - LEG.fade * smooth(Math.min(((LEG.yTo - y) / (LEG.yTo - LEG.yFrom)) * 2, 1));
@@ -75,10 +81,13 @@ function shapeSurface(geometry) {
       const wt = Math.exp(-Math.pow((y - CHIN.tipCenter) / CHIN.tipSigma, 2)) * (1 - Math.min(Math.abs(x) / CHIN.tipWidth, 1));
       nz += CHIN.tipPush * wt;
     }
-    if (nx !== x) pos.setX(i, nx);
-    if (nz !== z) pos.setZ(i, nz);
+    if (nx !== x) { pos.setX(i, nx); changed = true; }
+    if (nz !== z) { pos.setZ(i, nz); changed = true; }
   }
-  pos.needsUpdate = true;
+  if (changed) {
+    pos.needsUpdate = true;
+    geometry.computeVertexNormals();
+  }
 }
 
 export function applyHeroicShape(root) {
