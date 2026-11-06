@@ -85,13 +85,33 @@ export function frameRotation(restDirection, restNormal, direction, normal) {
 
 export function handFrame(rest, armMap, side) {
   const wrist = rest.get(armMap.wrist);
-  const index = rest.get(armMap.index[0]);
-  const middle = rest.get(armMap.middle[0]);
-  const pinky = rest.get(armMap.pinky[0]);
-  const forward = middle.clone().sub(wrist).normalize();
-  const normal = new Vector3().crossVectors(index.clone().sub(pinky), forward).normalize();
-  if (side === 'L') normal.negate();
+  const indexName = armMap.index?.[0];
+  const middleName = armMap.middle?.[0];
+  const pinkyName = armMap.pinky?.[0];
+  const thumbName = armMap.thumb?.[0];
+  const index = indexName ? rest.get(indexName) : null;
+  const middle = middleName ? rest.get(middleName) : null;
+  const pinky = pinkyName ? rest.get(pinkyName) : null;
+  const thumb = thumbName ? rest.get(thumbName) : null;
+  const forward = middle && wrist ? middle.clone().sub(wrist).normalize()
+    : rest.get(armMap.wrist).clone().sub(rest.get(armMap.forearm)).normalize();
+  const acrossPalm = index && pinky ? index.clone().sub(pinky) : null;
+  let normal = acrossPalm ? new Vector3().crossVectors(acrossPalm, forward).normalize() : null;
+  const thumbNormal = thumb && wrist
+    ? new Vector3().crossVectors(forward, thumb.clone().sub(wrist)).normalize()
+    : null;
+  // Finger spacing establishes the palm plane; the thumb selects its palmar side.
+  // Without this sign check the same cross product can target the back of both hands.
+  if (thumbNormal?.lengthSq() > 1e-8) {
+    if (!normal || normal.lengthSq() < 1e-8) normal = thumbNormal;
+    else if (normal.dot(thumbNormal) < 0) normal.negate();
+  }
+  if (!normal || normal.lengthSq() < 1e-8) {
+    normal = Math.abs(forward.y) < 0.9 ? new Vector3(0, 1, 0) : new Vector3(0, 0, 1);
+    normal.addScaledVector(forward, -normal.dot(forward)).normalize();
+  }
   const flexionAxis = new Vector3().crossVectors(forward, normal).normalize();
+  if (flexionAxis.lengthSq() < 1e-8) flexionAxis.set(0, 0, 1);
   return { forward, normal, flexionAxis };
 }
 
@@ -122,9 +142,15 @@ export class AvatarAdapter {
   rest = new Map();
   restLocal = new Map();
   restLocalQuat = new Map();
+  restLocalScale = new Map();
   bindWorldQuat = new Map();
   segmentLengths = new Map();
 
+  /**
+   * @param {import('three').Object3D} model
+   * @param {any} rigInfo
+   * @param {any} profile
+   */
   constructor(model, rigInfo, profile = MAKEHUMAN_DEFAULT_PROFILE) {
     this.model = model;
     this.info = rigInfo;
@@ -133,13 +159,13 @@ export class AvatarAdapter {
     model.traverse((o) => {
       if (o.isBone) this.bones.set(o.name, o);
     });
-
     for (const b of rigInfo.bones) {
       this.rest.set(b.name, new Vector3().fromArray(b.head));
       const bone = this.bones.get(b.name);
       if (!bone) throw new Error(`Avatar missing bone "${b.name}" declared in rig metadata`);
       this.restLocal.set(b.name, bone.position.clone());
       this.restLocalQuat.set(b.name, bone.quaternion.clone());
+      this.restLocalScale.set(b.name, bone.scale.clone());
     }
 
     this.model.updateMatrixWorld(true);
@@ -169,6 +195,18 @@ export class AvatarAdapter {
   }
 
   applyVisualMaterials() {
+    // Imported external avatars keep their original PBR materials and textures; only the
+    // bundled MakeHuman default profile opts into the stylized skin material and eye graft.
+    if (this.profile.overrideMaterials === false) {
+      this.model.traverse((o) => {
+        if (o instanceof SkinnedMesh) {
+          o.castShadow = true;
+          o.receiveShadow = true;
+          o.frustumCulled = false;
+        }
+      });
+      return;
+    }
     const skinMat = new MeshStandardMaterial({
       color: this.profile.skinColor ?? 0xd8d1c7,
       roughness: this.profile.skinRoughness ?? 0.76,
@@ -212,17 +250,27 @@ export class AvatarAdapter {
     for (const [name, bone] of this.bones) {
       bone.quaternion.copy(this.restLocalQuat.get(name));
       bone.position.copy(this.restLocal.get(name));
-      bone.scale.set(1, 1, 1);
+      bone.scale.copy(this.restLocalScale.get(name));
     }
-    this.model.position.set(0, 0, 0);
-    this.model.quaternion.identity();
-    this.model.scale.setScalar(this.profile.scale ?? 1);
+    if (this.profile.rootTransform) {
+      const { position, quaternion, scale } = this.profile.rootTransform;
+      this.model.position.fromArray(position);
+      this.model.quaternion.fromArray(quaternion);
+      this.model.scale.setScalar(scale);
+    } else {
+      this.model.position.set(0, 0, 0);
+      this.model.quaternion.identity();
+      this.model.scale.setScalar(this.profile.scale ?? 1);
+    }
     this.model.updateMatrixWorld(true);
   }
 
   rotateLocalEulerDeg(name, x = 0, y = 0, z = 0) {
     if (!this.bones.has(name)) return;
-    this.bone(name).quaternion.setFromEuler(new Euler(x * DEG, y * DEG, z * DEG, 'YXZ'));
+    // Relative to the bone's rest local rotation: models whose bind pose is not
+    // "all identity quaternions" keep their base orientation (identity for MakeHuman).
+    const delta = new Quaternion().setFromEuler(new Euler(x * DEG, y * DEG, z * DEG, 'YXZ'));
+    this.bone(name).quaternion.copy(this.restLocalQuat.get(name)).multiply(delta);
     this.model.updateMatrixWorld(true);
   }
 
@@ -230,54 +278,27 @@ export class AvatarAdapter {
     if (!this.bones.has(name)) return;
     const b = this.bone(name);
     const parentQuat = b.parent ? b.parent.getWorldQuaternion(new Quaternion()) : new Quaternion();
+    // Desired world orientation is absolute; callers compose bind-relative deltas with bindWorldQuat.
     b.quaternion.copy(parentQuat.invert().multiply(worldQuat));
     this.model.updateMatrixWorld(true);
   }
 
   /**
-   * Two-bone IK using the avatar's rest frame basis (used for legs and natural rest arms).
+   * Two-bone IK used for legs and natural rest arms. Solves joint positions analytically,
+   * then realizes them with minimal rotations so it works for any bind pose, including
+   * straight (T-pose) chains where a rest bend plane is undefined.
    */
   solveLimb(side, kind, target, pole, maxFlex = kind === 'arm' ? 145 : 135) {
-    const map = kind === 'arm'
+    const map = /** @type {any} */ (kind === 'arm'
       ? (side === 'L' ? this.profile.boneMap.leftArm : this.profile.boneMap.rightArm)
-      : (side === 'L' ? this.profile.boneMap.leftLeg : this.profile.boneMap.rightLeg);
+      : (side === 'L' ? this.profile.boneMap.leftLeg : this.profile.boneMap.rightLeg));
     const u = kind === 'arm' ? map.upperArm : map.upperLeg;
     const l = kind === 'arm' ? map.forearm : map.lowerLeg;
     const e = kind === 'arm' ? map.wrist : map.foot;
 
     const r0 = this.rest.get(u), r1 = this.rest.get(l), r2 = this.rest.get(e);
-    const a = r1.clone().sub(r0), b = r2.clone().sub(r1);
-    const normal = new Vector3().crossVectors(a, b).normalize();
     const pu = this.point(u);
-    const solved = solveTwoBone(pu, target, pole, a.length(), b.length(), maxFlex);
-    const d0 = solved.mid.clone().sub(pu), d1 = solved.end.clone().sub(solved.mid);
-    const n = new Vector3().crossVectors(d0, d1).normalize();
-    if (n.lengthSq() < 0.1) {
-      n.crossVectors(pole.clone().sub(pu), solved.end.clone().sub(pu)).normalize();
-      if (n.lengthSq() < 0.1) n.copy(normal);
-    }
-    this.setWorldRotation(u, frameRotation(a, normal, d0, n));
-    this.setWorldRotation(l, frameRotation(b, normal, d1, n));
-    return solved;
-  }
-
-  /**
-   * Two-bone retargeting for external world-space landmarks (from HumanRig.limbToWorldTargets).
-   * Preserves the avatar's own upper-arm and forearm bone lengths while matching the
-   * physical shoulder->elbow->wrist direction and elbow flexion angle.
-   */
-  solveLimbToWorldTargets(side, kind, target, pole, maxFlex = kind === 'arm' ? 155 : 140) {
-    const map = kind === 'arm'
-      ? (side === 'L' ? this.profile.boneMap.leftArm : this.profile.boneMap.rightArm)
-      : (side === 'L' ? this.profile.boneMap.leftLeg : this.profile.boneMap.rightLeg);
-    const u = kind === 'arm' ? map.upperArm : map.upperLeg;
-    const l = kind === 'arm' ? map.forearm : map.lowerLeg;
-    const e = kind === 'arm' ? map.wrist : map.foot;
-
-    const r0 = this.rest.get(u), r1 = this.rest.get(l), r2 = this.rest.get(e);
-    const a = r1.distanceTo(r0), b = r2.distanceTo(r1);
-    const root = this.point(u);
-    const solved = solveTwoBone(root, target, pole, a, b, maxFlex);
+    const solved = solveTwoBone(pu, target, pole, r1.distanceTo(r0), r2.distanceTo(r1), maxFlex);
 
     const align = (bone, from, to, desired) => {
       this.model.updateMatrixWorld(true);
@@ -286,9 +307,16 @@ export class AvatarAdapter {
       world.premultiply(new Quaternion().setFromUnitVectors(current, desired.clone().normalize()));
       this.setWorldRotation(bone, world);
     };
-    align(u, u, l, solved.mid.clone().sub(root));
+    align(u, u, l, solved.mid.clone().sub(pu));
     align(l, l, e, solved.end.clone().sub(solved.mid));
     return solved;
+  }
+
+  /**
+   * World-space landmark variant kept for call-site clarity; identical solver.
+   */
+  solveLimbToWorldTargets(side, kind, target, pole, maxFlex = kind === 'arm' ? 155 : 140) {
+    return this.solveLimb(side, kind, target, pole, maxFlex);
   }
 
   /**
@@ -306,7 +334,7 @@ export class AvatarAdapter {
       aim.slerp(new Quaternion(), 1 - (bendLimit * DEG) / bend);
       desired = forearm.clone().applyQuaternion(aim);
     }
-    const targetQ = frameRotation(f, normal, desired, palmNormal);
+    const targetQ = frameRotation(f, normal, desired, palmNormal).multiply(this.bindWorldQuat.get(armMap.wrist));
     if (armMap.forearmTwist && this.bones.has(armMap.forearmTwist)) {
       const restAxis = this.rest.get(armMap.wrist).clone().sub(this.rest.get(armMap.forearm)).normalize();
       const forearmQ = this.bone(armMap.forearm).getWorldQuaternion(new Quaternion());
@@ -314,7 +342,10 @@ export class AvatarAdapter {
       const relV = new Vector3(rel.x, rel.y, rel.z);
       const halfAngle = 2 * Math.atan2(restAxis.dot(relV), rel.w);
       const roll = Math.atan2(Math.sin(halfAngle), Math.cos(halfAngle));
-      this.bone(armMap.forearmTwist).quaternion.setFromAxisAngle(restAxis, forearmTwist(roll));
+      const twist = this.bone(armMap.forearmTwist);
+      twist.quaternion.copy(this.restLocalQuat.get(armMap.forearmTwist)).multiply(
+        new Quaternion().setFromAxisAngle(restAxis, forearmTwist(roll)),
+      );
       this.model.updateMatrixWorld(true);
     }
     this.setWorldRotation(armMap.wrist, targetQ);
@@ -328,13 +359,14 @@ export class AvatarAdapter {
       if (!chain) continue;
       chain.forEach((boneName, idx) => {
         if (this.bones.has(boneName)) {
-          this.bone(boneName).quaternion.setFromAxisAngle(flexionAxis, (flexAngles[idx] ?? 10) * DEG);
+          const delta = new Quaternion().setFromAxisAngle(flexionAxis, (flexAngles[idx] ?? 10) * DEG);
+          this.bone(boneName).quaternion.copy(this.restLocalQuat.get(boneName)).multiply(delta);
         }
       });
     }
     if (armMap.thumb) {
       for (const boneName of armMap.thumb) {
-        if (this.bones.has(boneName)) this.bone(boneName).quaternion.identity();
+        if (this.bones.has(boneName)) this.bone(boneName).quaternion.copy(this.restLocalQuat.get(boneName));
       }
     }
     this.model.updateMatrixWorld(true);
@@ -357,7 +389,8 @@ export class AvatarAdapter {
       const target = new Vector3().fromArray(legCfg.target);
       const pole = new Vector3().fromArray(legCfg.pole);
       this.solveLimb(side, 'leg', target, pole);
-      const footQ = new Quaternion().setFromEuler(new Euler(legCfg.pitchDeg * DEG, legCfg.yawDeg * DEG, 0, 'YXZ'));
+      const footQ = new Quaternion().setFromEuler(new Euler(legCfg.pitchDeg * DEG, legCfg.yawDeg * DEG, 0, 'YXZ'))
+        .multiply(this.bindWorldQuat.get(legMap.foot));
       this.setWorldRotation(legMap.foot, footQ);
     }
 
@@ -411,10 +444,15 @@ export class AvatarAdapter {
 
     const scaledTarget = skinShoulder.clone().addScaledVector(armDir, targetDistance);
 
-    // Compute pole vector in avatar shoulder space from physical upper-arm direction
-    const upperDir = vUpper.lengthSq() > 1e-10 ? vUpper.clone().normalize() : new Vector3(0, -1, 0);
-    let pole = skinShoulder.clone().addScaledVector(upperDir, a);
-    // If the arm is nearly straight, bias the pole slightly backward/outward so the elbow hinge plane stays well-conditioned
+    // The physical elbow position lies nearly on the shoulder-to-wrist line in this sagittal model, so it cannot
+    // define a stable bend plane. Derive the plane from the physical upper-arm orientation, then project it
+    // perpendicular to the shoulder-to-wrist direction.
+    const physicalUpper = vUpper.lengthSq() > 1e-10 ? vUpper.clone().normalize() : new Vector3(0, -1, 0);
+    const bendDirection = physicalUpper.clone().addScaledVector(armDir, -physicalUpper.dot(armDir));
+    if (bendDirection.lengthSq() < 1e-8) bendDirection.set(0, -1, 0).addScaledVector(armDir, armDir.y);
+    if (bendDirection.lengthSq() < 1e-8) bendDirection.set(side === 'L' ? 1 : -1, 0, 0);
+    bendDirection.normalize();
+    const pole = skinShoulder.clone().addScaledVector(bendDirection, Math.max(0.2, a));
     const bendSin = Math.sin(elbowFlex);
     if (bendSin < 0.12) {
       const lateral = side === 'L' ? 0.08 : -0.08;
@@ -437,10 +475,15 @@ export class AvatarAdapter {
       handDir.applyQuaternion(new Quaternion().slerp(wristDeltaQ, 0.35)).normalize();
     }
 
-    // Natural neutral-supinated palm normal: thumb/radial side up/outward, palm facing medially/upward during curl
-    const medial = new Vector3(side === 'L' ? -1 : 1, 0.25, 0).normalize();
-    const palmNormal = medial.clone().addScaledVector(forearmDir, -medial.dot(forearmDir));
-    if (palmNormal.lengthSq() < 1e-6) palmNormal.set(side === 'L' ? -1 : 1, 0, 0);
+    // The reduced physics rig has no wrist-supination DOF: keep the palm medial at rest,
+    // then turn it upward as the elbow curls instead of leaving it facing the camera.
+    const medial = new Vector3(side === 'L' ? -1 : 1, 0, 0);
+    const curlSupination = MathUtils.smoothstep(elbowFlex, 20 * DEG, 80 * DEG);
+    const palmNormal = medial.lerp(new Vector3(0, 1, 0), curlSupination);
+    palmNormal.addScaledVector(handDir, -palmNormal.dot(handDir));
+    if (palmNormal.lengthSq() < 1e-6) {
+      palmNormal.copy(medial).addScaledVector(handDir, -medial.dot(handDir));
+    }
     palmNormal.normalize();
 
     this.solveHand(side, handDir, palmNormal);
@@ -490,15 +533,16 @@ export class AvatarAdapter {
 
     // 1. Pelvis translation & sagittal tilt
     const rootBone = this.bone(bm.pelvis);
-    const restRootPos = this.restLocal.get(bm.pelvis);
     const pPelvis = positions.pelvis ? mjVecToThree(positions.pelvis) : new Vector3(0, dp.pelvisRestMuJoCoZ, 0);
     const restPelvisY = dp.pelvisRestMuJoCoZ ?? 0.915;
+    const rootBase = this.profile.rootTransform?.position ?? [0, 0, 0];
 
-    // Preserve lateral symmetry (X=0), apply vertical (Y) and anterior-posterior (Z) pelvis motion
-    rootBone.position.set(
-      restRootPos.x + pPelvis.x,
-      restRootPos.y + (pPelvis.y - restPelvisY),
-      restRootPos.z + pPelvis.z,
+    // Translate the avatar anchor in motion space. Moving a nested hips bone in its parent's
+    // local axes is wrong for GLBs whose hips is below an Armature/scene root.
+    this.model.position.set(
+      rootBase[0] + pPelvis.x,
+      rootBase[1] + (pPelvis.y - restPelvisY),
+      rootBase[2] + pPelvis.z,
     );
 
     // Sagittal pitch: in MuJoCo, positive pelvis_tilt is anterior tilt (+Y axis rotation).
@@ -567,7 +611,8 @@ export class AvatarAdapter {
         footPitchRad = -Math.atan2(footVec.y, Math.max(1e-4, footVec.z));
       }
       const yawRad = (standCfg.yawDeg ?? (isLeft ? 7 : -7)) * DEG;
-      const footQ = new Quaternion().setFromEuler(new Euler(footPitchRad, yawRad, 0, 'YXZ'));
+      const footQ = new Quaternion().setFromEuler(new Euler(footPitchRad, yawRad, 0, 'YXZ'))
+        .multiply(this.bindWorldQuat.get(legMap.foot));
       this.setWorldRotation(legMap.foot, footQ);
     }
 

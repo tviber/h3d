@@ -58,20 +58,29 @@
 
         <aside class="inspector" id="inspector">
           <div class="panel-heading"><h2>观察</h2><span id="data-status">等待数据</span></div>
-          <div class="avatar-selector" aria-label="人模选择">
-            <span class="mini-heading">显示人模 <small id="avatar-status">MakeHuman CC0</small></span>
-            <div class="segmented-control" role="radiogroup" aria-label="Avatar 切换">
-              <button type="button" data-avatar="makehuman" class="active" aria-pressed="true">MakeHuman 人体</button>
-              <button type="button" data-avatar="simplified" aria-pressed="false">简化连杆</button>
+          <details class="options-panel" open>
+            <summary><span>选择模型</span><small id="avatar-status">正在载入炭治郎…</small></summary>
+            <label class="option-field" for="avatar-select">当前模型
+              <select id="avatar-select" aria-label="当前模型">
+                <option value="makehuman">MakeHuman 人体</option>
+                <option value="imported" selected>炭治郎</option>
+                <option value="simplified">简化连杆</option>
+              </select>
+            </label>
+            <label class="option-import" for="avatar-file">导入其他 GLB
+              <input id="avatar-file" type="file" accept=".glb,model/gltf-binary" hidden />
+            </label>
+            <button id="profile-export" class="option-button" type="button" disabled>导出 Avatar Profile</button>
+            <div id="avatar-diagnostics" class="avatar-diagnostics" aria-live="polite">MakeHuman 默认人模已就绪。</div>
+            <div id="avatar-map" class="avatar-map" hidden></div>
+            <div class="toggle-list" aria-label="显示内容">
+              <label class="toggle-row"><span>人体表面<small>连续蒙皮 / 外形</small></span><button class="switch on" data-layer="surface" role="switch" aria-checked="true" aria-label="人体表面"><i></i></button></label>
+              <label class="toggle-row"><span>解剖骨骼与关节</span><button class="switch" data-layer="skeleton" role="switch" aria-checked="false" aria-label="解剖骨骼与关节"><i></i></button></label>
+              <label class="toggle-row"><span>关节坐标轴</span><button class="switch" data-layer="axes" role="switch" aria-checked="false" aria-label="关节坐标轴"><i></i></button></label>
+              <label class="toggle-row"><span>地面接触反力</span><button class="switch on" data-layer="grf" role="switch" aria-checked="true" aria-label="地面接触反力"><i></i></button></label>
+              <label class="toggle-row"><span>肌腱作用路径</span><button class="switch on" data-layer="tendons" role="switch" aria-checked="true" aria-label="肌腱作用路径"><i></i></button></label>
             </div>
-          </div>
-          <div class="toggle-list" aria-label="显示内容">
-            <label class="toggle-row"><span>人体表面<small>连续蒙皮 / 外形</small></span><button class="switch on" data-layer="surface" role="switch" aria-checked="true" aria-label="人体表面"><i></i></button></label>
-            <label class="toggle-row"><span>解剖骨骼与关节</span><button class="switch" data-layer="skeleton" role="switch" aria-checked="false" aria-label="解剖骨骼与关节"><i></i></button></label>
-            <label class="toggle-row"><span>关节坐标轴</span><button class="switch" data-layer="axes" role="switch" aria-checked="false" aria-label="关节坐标轴"><i></i></button></label>
-            <label class="toggle-row"><span>地面接触反力</span><button class="switch on" data-layer="grf" role="switch" aria-checked="true" aria-label="地面接触反力"><i></i></button></label>
-            <label class="toggle-row"><span>肌腱作用路径</span><button class="switch on" data-layer="tendons" role="switch" aria-checked="true" aria-label="肌腱作用路径"><i></i></button></label>
-          </div>
+          </details>
 
           <section class="dynamics-panel">
             <div class="section-heading"><div><span class="eyebrow">PHYSICS</span><h2>力学观测</h2></div><span class="unit-tag">实时样本</span></div>

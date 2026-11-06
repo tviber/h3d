@@ -19,7 +19,7 @@ h3d 是以肌肉骨骼动力学与控制为主线的研究原型，使用 MuJoCo
 - 控制：力矩 = f(关节, 时间)，由平滑脉冲叠加（峰值、起始时间、持续时间、方向，可选 sin² 或平台形状）。
 - 每个实验记录：时间、qpos/qvel/qacc、实际执行器力矩、关节功率、累计功、拍头（弦床中心）位置/速度/加速度（雅可比计算，并用有限差分交叉校验）、动能/势能、角动量，以及各关节对拍头速度的贡献分解。
 - A/B/C 对比：共用同一个模型、同一个初始姿态、同一组手臂力矩脉冲对象，自动生成 CSV、JSON、Markdown 报告和 5 张 PNG 图。
-- CLI（`compare`、`run`、`info`），58 个 `node:test` 测试，GitHub Actions CI（类型检查、测试、CLI 冒烟）。
+- CLI（`compare`、`run`、`info`），65 个 `node:test` 测试，GitHub Actions CI（类型检查、测试、CLI 冒烟）。
 
 v0.0.1 的五自由度球拍模型仍是理想力矩电机模型；下面新增的肌肉实验使用独立 MJCF 和模拟模块，不改变 A/B/C 既有结果。
 
@@ -42,9 +42,17 @@ Physics Simulation 负责浮动根部和关节的正向动力学、足底接触�
 
 ### Avatar 适配器与动作格式
 
-查看器默认载入 MakeHuman CC0 蒙皮人模，也可切换到简化连杆。`AvatarAdapter` 将标准人体角色映射到 Profile 指定的显示骨骼，并处理 MuJoCo 到 Three.js 的坐标转换、绑定姿态校准、上/下肢重定向和未建模关节的默认姿态。重定向只更新显示骨骼旋转及根骨位移，不改变物理记录；替换为其他 GLB/GLTF/VRM 人模时，需要提供该模型的 Profile、骨骼元数据和许可来源。
+查看器启动时默认载入并显示炭治郎；本地静态服务器通过 `/avatars/tanjiro.glb` 提供 `out/炭治郎-avatar.noindex/tanjiro-tripo-h3.1-rigged-operator.glb`。该 GLB 由 Tripo Studio 根据正面、背面和左右侧视图生成，包含 12 个独立网格、分件材质、PBR 贴图和双足蒙皮，并通过项目现有 `AvatarAdapter` 的 4 组动作离线检查。网格部件保持分离，但没有为衣物增加布料物理或专用衣物辅助骨骼。资产位于被 Git 忽略的 `out/炭治郎-avatar.noindex/`，不会随仓库分发；新工作区没有该二进制文件，需要从自己的参考图重新生成或映射到其他本地 GLB。右侧 **选择模型** 面板可切换 MakeHuman CC0 蒙皮人模或简化连杆，也可用“导入其他 GLB”载入自己的已绑骨 `.glb`。导入后会显示骨骼映射诊断；必要时可手工指定关键骨骼。模型通过 `AvatarAdapter` 映射到 canonical humanoid，完成坐标、单位、朝向和静止骨盆高度校准，再把动作重定向到显示骨骼。外部模型默认保留原有 PBR 材质、贴图、网格和蒙皮权重；统一缩放会改变模型的世界尺寸，但不改变身体比例。Avatar Profile 可从面板导出。
 
-四组动作均可在两种 Avatar 间切换：`single-elbow`、`shoulder-elbow`、`squat-to-stand`、`countermovement-drive`。当前物理模型仍是降阶模型：上肢实验只驱动右侧肩肘链，下肢实验共享左右腿的矢状面运动；其他手指、足趾、肩胛和侧向自由度由显示姿态补足，不代表新增的物理自由度。
+没有骨骼的静态人形 GLB 可先用 Blender 离线脚本生成实验性骨架和蒙皮：
+
+```sh
+blender --background --factory-startup --python scripts/rig-glb.py -- input.glb output-rigged.glb --forward -y --weights heat --weights heat
+```
+
+脚本仍按网格 bounds 推算 21 根通用人体骨骼；权重先尝试 Blender Bone Heat，失败后使用 Blender 骨骼包络，只对包络遗漏的顶点按骨骼线段距离补权，最后归一化并限制每顶点最多四个影响骨骼。旧版静态炭治郎网格上 Bone Heat 未能解出权重，包络覆盖约 97.3% 顶点，其余约 2.7% 由距离算法补齐。该流程比全网格距离权重更细，但不等同于学习式自动绑骨，也不能替代人工校正。输出是独立 GLB，保留源网格、UV、PBR 材质和嵌入图像，同时写出 `.avatar-report.json` 诊断报告。请检查肩肘、髋膝、手脚和衣物的变形，再用于正式资产。`--weights distance` 可强制使用旧算法作对照。坐标轴不是 Z-up 或人物不是直立姿势时，需要先在建模工具中校正；`--forward` 用于指定模型在 Blender 中的正面方向（`-y` 或 `+y`）。完整映射和坐标约定见 [docs/avatar-pipeline.md](docs/avatar-pipeline.md)。
+
+四组动作均可用于 MakeHuman、导入人模和简化连杆：`single-elbow`、`shoulder-elbow`、`squat-to-stand`、`countermovement-drive`。重定向只更新显示骨骼旋转及 Avatar 根节点位移，不重新运行 MuJoCo，也不改变物理记录。当前物理模型仍是降阶模型：上肢实验只驱动右侧肩肘链，下肢实验共享左右腿的矢状面运动；其他手指、足趾、肩胛和侧向自由度由显示姿态补足，不代表新增的物理自由度。
 
 MakeHuman 模型按 CC0 提供。许可和来源记录位于 `web/models/MAKEHUMAN-LICENSE.md`、`web/models/CC0-1.0.txt` 与 `web/models/ASSET-PROVENANCE.md`。
 
@@ -174,7 +182,7 @@ b.plot(x="time", y=["head_speed", "butt_speed"])
 
 ```sh
 npm run typecheck   # tsc --noEmit
-npm test            # node:test，58 个测试，约 3 s
+npm test            # node:test，65 个测试，约 3 s
 npm run smoke       # CLI 冒烟：compare --no-png 写到 out/smoke
 ```
 
@@ -204,9 +212,10 @@ src/motion-clip.ts                后端独立的动作 JSON 导出
 src/muscle-cli.ts                 肌肉实验运行和动作导出
 src/web-server.ts                 静态文件服务器，不运行仿真
 web/                              Three.js 动作查看器与 Avatar 适配器
- test/muscle.test.ts              肌肉模型、控制、接触与导出测试
+scripts/                          GLB 分析、实验性自动绑骨与离线检查
 test/                             node:test 测试
- docs/physics-model.md            力矩模型与肌肉实验说明
+docs/physics-model.md              力矩模型与肌肉实验说明
+docs/avatar-pipeline.md            GLB 导入、坐标标准化与动作重定向说明
 ```
 
 ## 近似与限制

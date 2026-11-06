@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const WEB_ROOT = resolve(fileURLToPath(new URL('../web/', import.meta.url)));
 const THREE_ROOT = resolve(fileURLToPath(new URL('../node_modules/three/', import.meta.url)));
+const TANJIRO_AVATAR = resolve(fileURLToPath(new URL('../out/炭治郎-avatar.noindex/tanjiro-tripo-h3.1-rigged-operator.glb', import.meta.url)));
 const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.glb': 'model/gltf-binary',
@@ -20,6 +21,7 @@ const port = Number(process.env.PORT ?? 4173);
 
 function resolveStaticTarget(pathname: string): string | null {
   if (pathname === '/') return resolve(WEB_ROOT, './index.html');
+  if (pathname === '/avatars/tanjiro.glb') return TANJIRO_AVATAR;
   if (pathname.startsWith('/vendor/three/')) {
     const sub = pathname.slice('/vendor/three/'.length);
     const target = resolve(THREE_ROOT, sub);

@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { AvatarAdapter, mjVecToThree } from './avatar/avatar-adapter.js';
+import { alignSkinnedMeshPartToArm, applyAvatarRootTransform, buildImportedProfile } from './avatar/avatar-import.js';
 
 const canvas = document.querySelector('#scene');
 const loading = document.querySelector('#loading');
@@ -17,9 +20,11 @@ const boneColor = 0xb89456;
 const yAxis = new THREE.Vector3(0, 1, 0);
 
 let scene, renderer, camera, controls, avatarAdapter, skeletonHelper;
+let importedGltf = null, importedAdapter = null, importedHelper = null, importedProfile = null;
+let importedOverrides = {}, importedOriginalRoot = null, importedModelLabel = '';
 let clips = [], clip = null, time = 0, playing = false, loop = true;
 let lastFrame = 0, lastPanelUpdate = 0, cameraDistance = 3.15;
-let avatarSelection = 'makehuman';
+let avatarSelection = 'imported';
 let avatarLoadError = false;
 let lastFrameErrorAt = -Infinity;
 const simplifiedGroup = new THREE.Group();
@@ -282,18 +287,17 @@ function updateGroundForces(frame) {
 }
 
 function syncVisibility() {
-  const makeHuman = avatarSelection === 'makehuman';
-  if (avatarAdapter) avatarAdapter.model.visible = makeHuman && layerState.surface;
-  simplifiedGroup.visible = (!makeHuman || !avatarAdapter) && layerState.surface;
-  physicalSkeletonGroup.visible = !makeHuman && layerState.skeleton;
-  if (skeletonHelper) skeletonHelper.visible = makeHuman && layerState.skeleton;
+  const showMakeHuman = avatarSelection === 'makehuman';
+  const showImported = avatarSelection === 'imported';
+  const showSimplified = avatarSelection === 'simplified';
+  if (avatarAdapter) avatarAdapter.model.visible = showMakeHuman && layerState.surface;
+  if (importedGltf) importedGltf.scene.visible = showImported && layerState.surface;
+  simplifiedGroup.visible = showSimplified && layerState.surface;
+  physicalSkeletonGroup.visible = showSimplified && layerState.skeleton;
+  if (skeletonHelper) skeletonHelper.visible = showMakeHuman && layerState.skeleton;
+  if (importedHelper) importedHelper.visible = showImported && layerState.skeleton;
   axesGroup.visible = layerState.axes;
   tendonGroup.visible = layerState.tendons;
-  document.querySelectorAll('[data-avatar]').forEach((button) => {
-    const selected = button.dataset.avatar === avatarSelection;
-    button.classList.toggle('active', selected);
-    button.setAttribute('aria-pressed', String(selected));
-  });
 }
 
 function activationColor(value) {
@@ -502,6 +506,7 @@ function setClip(index) {
   const frame = sampleAt(clip, time);
   renderFrame(frame);
   updatePanel(clip, frame, performance.now() + 100);
+  if (avatarSelection === 'imported' && importedGltf) fitView();
 }
 
 function acceptMotionSet(value) {
@@ -524,9 +529,10 @@ function setPlaying(value) {
 
 function renderFrame(frame) {
   if (!clip) return;
-  if (avatarAdapter && avatarSelection === 'makehuman') {
-    avatarAdapter.applyFrame(clip, frame);
-    skeletonHelper?.update();
+  const activeAvatarAdapter = avatarSelection === 'imported' ? importedAdapter : avatarSelection === 'makehuman' ? avatarAdapter : null;
+  if (activeAvatarAdapter) {
+    activeAvatarAdapter.applyFrame(clip, frame);
+    if (avatarSelection === 'makehuman') skeletonHelper?.update();
   }
   const positions = { ...clip.rig.staticPositions, ...frame.positions };
   if (positions.shoulder && !positions.rightShoulder) positions.rightShoulder = positions.shoulder;
@@ -604,7 +610,11 @@ function setCamera(name) {
 
 function fitView() {
   if (!clip) return;
-  const subject = avatarSelection === 'makehuman' && avatarAdapter ? avatarAdapter.model : simplifiedGroup;
+  const subject = avatarSelection === 'makehuman' && avatarAdapter
+    ? avatarAdapter.model
+    : avatarSelection === 'imported' && importedGltf
+      ? importedGltf.scene
+      : simplifiedGroup;
   subject.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(subject);
   if (bounds.isEmpty()) return;
@@ -618,13 +628,160 @@ function fitView() {
 
 function setAvatar(name) {
   avatarSelection = name;
+  const selector = document.querySelector('#avatar-select');
+  if (selector && selector.value !== name) selector.value = name;
   syncVisibility();
   const status = name === 'makehuman'
     ? (avatarAdapter ? 'MakeHuman CC0' : avatarLoadError ? '人模载入失败' : '正在载入…')
-    : (avatarLoadError ? '简化连杆 · 人模载入失败' : '简化连杆');
+    : name === 'imported'
+      ? (importedAdapter ? importedModelLabel : importedGltf ? '映射不完整' : '尚未导入')
+      : (avatarLoadError ? '简化连杆 · 人模载入失败' : '简化连杆');
   setText('#avatar-status', status);
   updateAvatarLoading();
   if (clip) renderFrame(sampleAt(clip, time));
+  if (name === 'imported' && importedGltf) fitView();
+}
+
+function setAvatarDiagnostics(message, tone = 'info') {
+  const node = document.querySelector('#avatar-diagnostics');
+  node.textContent = message;
+  node.dataset.tone = tone;
+}
+
+function renderImportedMap(gltf, result) {
+  const panel = document.querySelector('#avatar-map');
+  panel.replaceChildren();
+  const bones = [];
+  gltf.scene.traverse((object) => { if (object.isBone) bones.push(object.name); });
+  bones.sort((a, b) => a.localeCompare(b));
+  const required = result?.diagnosis?.missing?.filter((role) => !role.includes('蒙皮')) ?? [];
+  const editable = ['hips', 'head', 'leftUpperArm', 'leftLowerArm', 'leftHand', 'rightUpperArm', 'rightLowerArm', 'rightHand',
+    'leftUpperLeg', 'leftLowerLeg', 'leftFoot', 'rightUpperLeg', 'rightLowerLeg', 'rightFoot'];
+  const roles = editable.filter((role) => result?.map?.[role] || required.includes(role));
+  if (!bones.length || !roles.length) { panel.hidden = true; return; }
+  for (const role of roles) {
+    const label = document.createElement('label');
+    label.textContent = role;
+    const select = document.createElement('select');
+    select.dataset.role = role;
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = '未映射';
+    select.append(empty);
+    for (const boneName of bones) {
+      const option = document.createElement('option');
+      option.value = boneName;
+      option.textContent = boneName;
+      select.append(option);
+    }
+    select.value = result.map?.[role] ?? '';
+    select.addEventListener('change', () => {
+      if (select.value) importedOverrides[role] = select.value;
+      else delete importedOverrides[role];
+      applyImportedOverrides();
+    });
+    label.append(select);
+    panel.append(label);
+  }
+  panel.hidden = false;
+}
+
+function applyImportedOverrides() {
+  if (!importedGltf) return;
+  importedAdapter?.reset();
+  importedGltf.scene.position.copy(importedOriginalRoot.position);
+  importedGltf.scene.quaternion.copy(importedOriginalRoot.quaternion);
+  importedGltf.scene.scale.copy(importedOriginalRoot.scale);
+  importedGltf.scene.updateMatrixWorld(true);
+  const result = buildImportedProfile(importedGltf, {
+    id: 'imported-avatar',
+    label: importedModelLabel,
+    overrides: importedOverrides,
+    allowIncomplete: true,
+  });
+  importedProfile = result.profile;
+  if (importedAdapter) scene.remove(importedAdapter.model);
+  if (importedHelper) scene.remove(importedHelper);
+  importedAdapter = null;
+  importedHelper = null;
+  if (!result.profile || !result.diagnosis.valid) {
+    document.querySelector('#profile-export').disabled = true;
+    const missing = result.diagnosis.missing.join('、') || '无';
+    setAvatarDiagnostics(`骨骼映射不完整，缺少：${missing}\n\n可在下方手工指定关键骨骼。未绑骨模型需先运行 scripts/rig-glb.py。`, 'error');
+    renderImportedMap(importedGltf, result);
+    setAvatar('imported');
+    return;
+  }
+  applyAvatarRootTransform(importedGltf.scene, result.profile);
+  if (importedModelLabel === '炭治郎') {
+    alignSkinnedMeshPartToArm(importedGltf.scene, 'tripo_part_6', 'R_Upperarm', 'R_Forearm');
+    alignSkinnedMeshPartToArm(importedGltf.scene, 'tripo_part_11', 'R_Upperarm', 'R_Forearm');
+  }
+  importedAdapter = new AvatarAdapter(importedGltf.scene, result.profile.rigInfo, result.profile);
+  importedAdapter.applyVisualMaterials();
+  importedHelper = new THREE.SkeletonHelper(importedGltf.scene);
+  importedHelper.material.depthTest = true;
+  importedHelper.material.transparent = true;
+  importedHelper.material.opacity = 0.85;
+  scene.add(importedHelper);
+  document.querySelector('#profile-export').disabled = false;
+  const optional = result.diagnosis.optionalMissing.slice(0, 8).join('、');
+  setAvatarDiagnostics(`映射完成：${Object.keys(result.map).length} 个语义骨骼。\n可选骨骼缺失：${optional || '无'}\n${result.diagnostics.join('\n')}`, 'ok');
+  renderImportedMap(importedGltf, result);
+  setAvatar('imported');
+}
+
+function installImportedAvatar(gltf, label) {
+  const select = document.querySelector('#avatar-select');
+  const importedOption = select.querySelector('option[value="imported"]');
+  importedOption.disabled = false;
+  importedOption.textContent = label;
+  importedModelLabel = label;
+  importedOverrides = {};
+  if (importedGltf) scene.remove(importedGltf.scene);
+  if (importedHelper) scene.remove(importedHelper);
+  importedGltf = gltf;
+  importedOriginalRoot = {
+    position: gltf.scene.position.clone(),
+    quaternion: gltf.scene.quaternion.clone(),
+    scale: gltf.scene.scale.clone(),
+  };
+  gltf.scene.traverse((object) => {
+    if (object.isMesh) object.castShadow = true;
+    if (object.isSkinnedMesh) object.receiveShadow = true;
+  });
+  scene.add(gltf.scene);
+  applyImportedOverrides();
+}
+
+function parseGlb(buffer) {
+  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer, '');
+}
+
+async function importAvatarFile(file) {
+  setAvatarDiagnostics(`正在解析 ${file.name}…`, 'info');
+  const buffer = await file.arrayBuffer();
+  const gltf = await parseGlb(buffer);
+  installImportedAvatar(gltf, file.name);
+}
+
+async function loadTanjiroAvatar() {
+  setAvatarDiagnostics('正在载入炭治郎 GLB…', 'info');
+  const response = await fetch('/avatars/tanjiro.glb');
+  if (!response.ok) throw new Error(`炭治郎模型载入失败 (${response.status})`);
+  const gltf = await parseGlb(await response.arrayBuffer());
+  installImportedAvatar(gltf, '炭治郎');
+}
+
+function exportImportedProfile() {
+  if (!importedProfile) return;
+  const blob = new Blob([JSON.stringify(importedProfile, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${importedModelLabel.replace(/\.[^.]+$/, '') || 'avatar'}.profile.json`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function setLayer(button) {
@@ -637,8 +794,8 @@ function setLayer(button) {
 }
 
 const dialogContent = {
-  guide: ['使用指南', '<p>拖动画布旋转视角，滚轮缩放；正面、侧面、俯视、背面和 45° 按钮切换相机。右侧可切换 MakeHuman 人体或简化连杆，并控制骨架、坐标轴、地面反力和肌腱路径。</p><p>时间轴可拖动到任意采样帧，也可点击阶段标记。播放速度只影响回放，不会改变物理仿真。</p><p><strong>Space</strong> 播放 / 暂停，<strong>R</strong> 回到动作开头。</p>'],
-  model: ['动力链与模型边界', '<p>MuJoCo 肌肉模型包含相应的关节、肌腱路径与接触约束。动作 JSON 同时导出身体位置、姿态和身体测点，查看器将这些数据映射到显示人模。</p><p>MakeHuman 通过独立 AvatarAdapter 适配器驱动。显示骨架只读取动作数据，不会修改 MuJoCo 的关节角、质量、肌肉力或积分状态。切换 Avatar 也不会修改动作文件。</p><p>下肢是共享节段运动的矢状面降阶模型；模型不表示左右腿独立控制、肩胛运动或完整三维肌肉控制。</p>'],
+  guide: ['使用指南', '<p>拖动画布旋转视角，滚轮缩放；正面、侧面、俯视、背面和 45° 按钮切换相机。右侧“选择模型”面板可切换 MakeHuman、炭治郎、其他导入人模或简化连杆，也可控制骨架、坐标轴、地面反力和肌腱路径。</p><p>选择“导入其他 GLB”载入已绑骨人模。查看骨骼映射诊断；如有缺失，可在映射列表手工指定关键骨骼。静态未绑骨人模需先用项目 Blender 脚本预处理。Avatar Profile 可从面板导出。</p><p>时间轴可拖动到任意采样帧，也可点击阶段标记。播放速度只影响回放，不会改变物理仿真。</p><p><strong>Space</strong> 播放 / 暂停，<strong>R</strong> 回到动作开头。</p>'],
+  model: ['动力链与模型边界', '<p>MuJoCo 肌肉模型包含相应的关节、肌腱路径与接触约束。动作 JSON 同时导出身体位置、姿态和身体测点，查看器将这些数据映射到显示人模。</p><p>MakeHuman、炭治郎和通过“选择模型”面板导入的人模都由独立 AvatarAdapter 驱动。显示骨架只读取动作数据，不会修改 MuJoCo 的关节角、质量、肌肉力或积分状态。切换 Avatar 也不会修改动作文件。</p><p>下肢是共享节段运动的矢状面降阶模型；模型不表示左右腿独立控制、肩胛运动或完整三维肌肉控制。</p>'],
   sources: ['资料与许可', '<p>查看器使用 Three.js，仿真使用 <a href="https://mujoco.org/" target="_blank" rel="noreferrer">MuJoCo</a>。肌肉参数和几何属于研究原型假设。</p><p>人体模型来自 MakeHuman，采用 CC0 许可。<a href="/models/MAKEHUMAN-LICENSE.md" target="_blank" rel="noreferrer">查看许可</a> · <a href="/models/ASSET-PROVENANCE.md" target="_blank" rel="noreferrer">查看资产来源</a>。</p><p>静态查看器只读取版本化的 <code>h3d.motion.v1</code> 文件，不导入模拟器代码。项目采用 Apache-2.0 许可。</p>'],
 };
 
@@ -655,7 +812,7 @@ async function loadAvatar() {
     skeletonHelper.material.transparent = true;
     skeletonHelper.material.opacity = 0.85;
     scene.add(skeletonHelper);
-    setText('#avatar-status', 'MakeHuman CC0');
+    if (avatarSelection === 'makehuman') setText('#avatar-status', 'MakeHuman CC0');
     syncVisibility();
     updateAvatarLoading();
     if (clip) renderFrame(sampleAt(clip, time));
@@ -663,14 +820,24 @@ async function loadAvatar() {
     avatarLoadError = true;
     console.error('MakeHuman avatar could not be loaded:', error);
     if (avatarSelection === 'makehuman') setAvatar('simplified');
-    else setText('#avatar-status', '人模载入失败');
+    else if (avatarSelection !== 'imported') setText('#avatar-status', '人模载入失败');
   }
 }
 
 try {
   createRenderer();
   document.querySelectorAll('[data-layer]').forEach((button) => button.addEventListener('click', () => setLayer(button)));
-  document.querySelectorAll('[data-avatar]').forEach((button) => button.addEventListener('click', () => setAvatar(button.dataset.avatar)));
+  document.querySelector('#avatar-select').addEventListener('change', (event) => setAvatar(event.target.value));
+  document.querySelector('#avatar-file').addEventListener('change', async (event) => {
+    const [file] = event.target.files;
+    if (!file) return;
+    try { await importAvatarFile(file); }
+    catch (error) {
+      console.error('Imported avatar could not be loaded:', error);
+      setAvatarDiagnostics(error instanceof Error ? error.message : String(error), 'error');
+    } finally { event.target.value = ''; }
+  });
+  document.querySelector('#profile-export').addEventListener('click', exportImportedProfile);
   document.querySelectorAll('[data-camera]').forEach((button) => button.addEventListener('click', () => setCamera(button.dataset.camera)));
   document.querySelector('#fit-view').addEventListener('click', fitView);
   playButton.addEventListener('click', () => setPlaying(!playing));
@@ -712,6 +879,14 @@ try {
 
   requestAnimationFrame(tick);
   loadAvatar();
+  loadTanjiroAvatar().catch((error) => {
+    console.error('Tanjiro avatar could not be loaded:', error);
+    setAvatarDiagnostics(error instanceof Error ? error.message : String(error), 'error');
+    if (!importedGltf) {
+      document.querySelector('#avatar-select').querySelector('option[value="imported"]').disabled = true;
+      setAvatar('makehuman');
+    }
+  });
   fetch('/demo-motion.json')
     .then((response) => { if (!response.ok) throw new Error(`动作数据请求失败 (${response.status})`); return response.json(); })
     .then(acceptMotionSet)
