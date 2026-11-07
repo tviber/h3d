@@ -1,0 +1,67 @@
+[
+  {
+    "id": "P015",
+    "name": "Standing contrapposto, hand on hip",
+    "description": "standing in a relaxed contrapposto pose with her weight on one leg, one hand resting on her hip, the other arm hanging relaxed",
+    "reference": "https://shisei.indaloop.app/en/pose/P015/",
+    "availableViews": [
+      "front",
+      "diag",
+      "side",
+      "above",
+      "below"
+    ]
+  },
+  {
+    "id": "P019",
+    "name": "Standing, arms stretched overhead",
+    "description": "standing with both arms stretched straight up high overhead in a full-body stretch, legs straight",
+    "reference": "https://shisei.indaloop.app/en/pose/P019/",
+    "availableViews": [
+      "front",
+      "diag",
+      "side",
+      "above",
+      "below"
+    ]
+  },
+  {
+    "id": "P058",
+    "name": "Squatting, hands on knees",
+    "description": "squatting low with both feet flat on the floor, both hands resting on her knees",
+    "reference": "https://shisei.indaloop.app/en/pose/P058/",
+    "availableViews": [
+      "front",
+      "diag",
+      "side",
+      "above",
+      "below"
+    ]
+  },
+  {
+    "id": "P064",
+    "name": "Bent forward, hands on knees",
+    "description": "standing bent forward at the waist, both hands resting on her knees, back nearly horizontal",
+    "reference": "https://shisei.indaloop.app/en/pose/P064/",
+    "availableViews": [
+      "front",
+      "diag",
+      "side",
+      "above",
+      "below"
+    ]
+  },
+  {
+    "id": "P073",
+    "name": "Standing twist, arms spread wide",
+    "description": "standing with her upper body twisted to the side, both arms spread wide open",
+    "reference": "https://shisei.indaloop.app/en/pose/P073/",
+    "availableViews": [
+      "front",
+      "diag",
+      "side",
+      "above",
+      "below"
+    ]
+  }
+]

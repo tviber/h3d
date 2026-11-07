@@ -1,0 +1,89 @@
+{
+  "asset": {
+    "url": "/models/validation/CesiumMan.glb",
+    "sha256": "b7001eaeea8254bd44773bcd247e78696d94169388fbb2a1800fc69434e777d9",
+    "license": "CC-BY-4.0",
+    "provenance": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan"
+  },
+  "diagnostics": {
+    "ok": true,
+    "schemaVersion": "h3d.avatar-profile.v2",
+    "errors": [],
+    "warnings": [],
+    "skinCount": 1,
+    "ambiguousRoles": [],
+    "missingOptionalRoles": [
+      "leftArm.clavicle",
+      "leftArm.thumb",
+      "leftArm.index",
+      "leftArm.middle",
+      "leftArm.ring",
+      "leftArm.pinky",
+      "rightArm.clavicle",
+      "rightArm.thumb",
+      "rightArm.index",
+      "rightArm.middle",
+      "rightArm.ring",
+      "rightArm.pinky"
+    ],
+    "capabilities": {
+      "torso": true,
+      "arms": true,
+      "legs": true,
+      "fingers": false,
+      "toes": true,
+      "twist": false
+    },
+    "height": 1.5065504802828615,
+    "groundY": 0
+  },
+  "chains": {
+    "leftArm": {
+      "upperLength": 0.2420089985419799,
+      "lowerLength": 0.18779139126390967,
+      "totalLength": 0.4298003898058896
+    },
+    "rightArm": {
+      "upperLength": 0.2420079692635977,
+      "lowerLength": 0.1877921333551644,
+      "totalLength": 0.4298001026187621
+    },
+    "leftLeg": {
+      "upperLength": 0.2661127813047357,
+      "lowerLength": 0.2758244886140626,
+      "totalLength": 0.5419372699187983
+    },
+    "rightLeg": {
+      "upperLength": 0.2661115754552969,
+      "lowerLength": 0.2758249401948672,
+      "totalLength": 0.5419365156501641
+    }
+  },
+  "roles": {
+    "pelvis": "Skeleton_torso_joint_1",
+    "head": "Skeleton_neck_joint_2",
+    "leftArm.upperArm": "Skeleton_arm_joint_L__4_",
+    "leftArm.forearm": "Skeleton_arm_joint_L__3_",
+    "leftArm.wrist": "Skeleton_arm_joint_L__2_",
+    "rightArm.upperArm": "Skeleton_arm_joint_R",
+    "rightArm.forearm": "Skeleton_arm_joint_R__2_",
+    "rightArm.wrist": "Skeleton_arm_joint_R__3_",
+    "leftLeg.upperLeg": "leg_joint_L_1",
+    "leftLeg.lowerLeg": "leg_joint_L_2",
+    "leftLeg.foot": "leg_joint_L_3",
+    "leftLeg.toes": "leg_joint_L_5",
+    "rightLeg.upperLeg": "leg_joint_R_1",
+    "rightLeg.lowerLeg": "leg_joint_R_2",
+    "rightLeg.foot": "leg_joint_R_3",
+    "rightLeg.toes": "leg_joint_R_5",
+    "spine.0": "Skeleton_torso_joint_2",
+    "spine.1": "torso_joint_3",
+    "neck.0": "Skeleton_neck_joint_1"
+  },
+  "geometry": {
+    "skinCount": 1,
+    "meshCount": 1,
+    "animationCount": 1,
+    "rawNodeCount": 22
+  }
+}

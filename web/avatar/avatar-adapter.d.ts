@@ -22,6 +22,7 @@ export interface AvatarProfile {
   rigUrl: string;
   scale?: number;
   heroicShape?: boolean;
+  statusLabel?: string;
   boneMap: Record<string, any>;
   defaultPose: Record<string, any>;
   [key: string]: unknown;

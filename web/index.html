@@ -31,14 +31,14 @@
       <section class="workspace" aria-label="人体动作实验室">
         <aside class="motion-panel" id="motion-panel">
           <div class="panel-heading"><h2>动作库</h2><span id="clip-count">00</span></div>
-          <p class="panel-intro">肌肉驱动 · 正向动力学实验</p>
+          <p class="panel-intro">物理仿真 · 动作设计预览</p>
           <div id="motion-list" class="motion-list"></div>
           <div class="motion-notes">
             <div class="mini-heading">观察重点</div>
             <p id="motion-description">等待动作数据载入。</p>
             <div id="focus-list" class="focus-list"></div>
           </div>
-          <div class="asset-note"><span class="asset-icon">◈</span><div>MuJoCo 肌骨仿真<small id="model-label">正在载入模型…</small></div></div>
+          <div class="asset-note"><span class="asset-icon">◈</span><div><span id="motion-source-label">MuJoCo 肌骨仿真</span><small id="model-label">正在载入模型…</small></div></div>
         </aside>
 
         <section class="viewport" aria-label="3D 人体视图">
@@ -58,21 +58,33 @@
 
         <aside class="inspector" id="inspector">
           <div class="panel-heading"><h2>观察</h2><span id="data-status">等待数据</span></div>
-          <div class="avatar-selector" aria-label="人模选择">
-            <span class="mini-heading">显示人模 <small id="avatar-status">MakeHuman CC0</small></span>
-            <div class="segmented-control" role="radiogroup" aria-label="Avatar 切换">
-              <button type="button" data-avatar="makehuman" class="active" aria-pressed="true">MakeHuman 人体</button>
-              <button type="button" data-avatar="simplified" aria-pressed="false">简化连杆</button>
+          <div class="avatar-selector">
+            <div class="mini-heading"><label for="avatar-select">选择模型</label><small id="avatar-status" role="status" aria-live="polite">正在载入…</small></div>
+            <select id="avatar-select" class="avatar-select" aria-describedby="avatar-status"></select>
+            <div class="avatar-actions">
+              <label class="avatar-import" for="avatar-files" tabindex="0">导入模型</label>
+              <input id="avatar-files" type="file" accept=".glb,.json" multiple hidden />
+              <button id="avatar-export" type="button" disabled>保存配置</button>
             </div>
+            <small class="avatar-help">选择 GLB，可同时选择对应的配置 JSON。文件只在本机读取。</small>
+            <details id="avatar-diagnostics" hidden><summary>模型检查结果</summary><pre id="avatar-diagnostics-text"></pre></details>
           </div>
           <div class="toggle-list" aria-label="显示内容">
             <label class="toggle-row"><span>人体表面<small>连续蒙皮 / 外形</small></span><button class="switch on" data-layer="surface" role="switch" aria-checked="true" aria-label="人体表面"><i></i></button></label>
             <label class="toggle-row"><span>解剖骨骼与关节</span><button class="switch" data-layer="skeleton" role="switch" aria-checked="false" aria-label="解剖骨骼与关节"><i></i></button></label>
             <label class="toggle-row"><span>关节坐标轴</span><button class="switch" data-layer="axes" role="switch" aria-checked="false" aria-label="关节坐标轴"><i></i></button></label>
             <label class="toggle-row"><span>地面接触反力</span><button class="switch on" data-layer="grf" role="switch" aria-checked="true" aria-label="地面接触反力"><i></i></button></label>
-            <label class="toggle-row"><span>肌腱作用路径</span><button class="switch on" data-layer="tendons" role="switch" aria-checked="true" aria-label="肌腱作用路径"><i></i></button></label>
+            <label class="toggle-row"><span>肌腱作用路径<small id="tendon-hint" hidden>当前模型未标定肌腱附着点</small></span><button class="switch on" data-layer="tendons" role="switch" aria-checked="true" aria-label="肌腱作用路径" aria-describedby="tendon-hint"><i></i></button></label>
           </div>
 
+          <section class="collision-panel" aria-label="角色体积与衣物">
+              <div class="section-heading"><div><span class="eyebrow">CONTACT</span><h2>角色体积与衣物</h2></div></div>
+              <label class="toggle-row"><span>肢体防穿透<small>保持骨长，通过关节旋转让开</small></span><button id="collision-enabled" class="switch" role="switch" aria-checked="false" aria-label="肢体防穿透" disabled><i></i></button></label>
+              <label class="toggle-row"><span>柔性衣物<small id="cloth-hint">此模型尚未配置独立衣物网格</small></span><button id="cloth-enabled" class="switch" role="switch" aria-checked="false" aria-label="柔性衣物" aria-describedby="cloth-hint" disabled><i></i></button></label>
+              <label class="toggle-row"><span>显示碰撞体<small>青色为体积，红色为肢体重叠</small></span><button class="switch" data-layer="volumes" role="switch" aria-checked="false" aria-label="显示碰撞体" disabled><i></i></button></label>
+              <p id="collision-status" class="collision-status" role="status">通用 Humanoid 模型支持体积约束</p>
+              <small class="avatar-help">显示层接触约束；衣物逐帧求平衡，暂不含惯性飘动。肌力与地面反力仍来自原始仿真。</small>
+          </section>
           <section class="dynamics-panel">
             <div class="section-heading"><div><span class="eyebrow">PHYSICS</span><h2>力学观测</h2></div><span class="unit-tag">实时样本</span></div>
             <dl class="readouts">

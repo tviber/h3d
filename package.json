@@ -12,6 +12,7 @@
     "h3d": "node src/cli.ts",
     "muscles": "node src/muscle-cli.ts",
     "web": "node src/web-server.ts",
+    "poses": "node scripts/export-basic-motions.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.ts\"",
     "smoke": "node src/cli.ts compare --out out/smoke --duration 0.6 --no-png"

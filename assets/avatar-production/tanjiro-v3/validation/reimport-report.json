@@ -1,0 +1,17 @@
+{
+  "bones": 78,
+  "meshes": [
+    "Body",
+    "Hair",
+    "Hanafuda_L",
+    "Hanafuda_R",
+    "Haori_Body",
+    "Haori_Sleeve_L",
+    "Haori_Sleeve_R"
+  ],
+  "actions": [
+    "HumanoidValidation"
+  ],
+  "vertices": 68633,
+  "unnormalizedVertices": []
+}

@@ -25,6 +25,7 @@ export interface MuscleRecording {
   bodyPositions: Map<string, [Float64Array, Float64Array, Float64Array]>;
   bodyQuaternions: Map<string, [Float64Array, Float64Array, Float64Array, Float64Array]>;
   positions: Map<string, [Float64Array, Float64Array, Float64Array]>;
+  restPositions: Record<string, Vec3>;
   com: [Float64Array, Float64Array, Float64Array];
   kineticEnergy: Float64Array;
   potentialEnergy: Float64Array;
@@ -322,6 +323,7 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
   const times = Float64Array.from({ length: n }, (_, k) => Math.min(k * dt, duration));
   times[n - 1] = duration;
   const positions = new Map<string, [Float64Array, Float64Array, Float64Array]>();
+  const restPositions: Record<string, Vec3> = {};
   const siteIds = SITE_NAMES.map((name) => [name, mj.mj_name2id(model, mj.mjtObj.mjOBJ_SITE.value, name)] as const).filter(([, id]) => id >= 0);
   const com: MuscleRecording['com'] = [new Float64Array(n), new Float64Array(n), new Float64Array(n)];
   const kineticEnergy = new Float64Array(n), potentialEnergy = new Float64Array(n);
@@ -364,6 +366,10 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
   try {
     mj.mj_resetData(model, data);
     mj.mj_forward(model, data);
+    for (const [name, id] of siteIds) {
+      const offset = id * 3;
+      restPositions[name] = [data.site_xpos[offset], data.site_xpos[offset + 1], data.site_xpos[offset + 2]];
+    }
     for (const body of bodies) {
       const pOffset = body.id * 3, qOffset = body.id * 4;
       body.restPosition = [data.xpos[pOffset], data.xpos[pOffset + 1], data.xpos[pOffset + 2]];
@@ -478,7 +484,7 @@ export function simulateMuscleExperiment(mj: Mujoco, model: MjModel, experiment:
     data.delete();
   }
   return {
-    dt, duration, n, times, joints, jointTypes, muscles: muscleNames, bodies, bodyPositions, bodyQuaternions, positions, com, kineticEnergy, potentialEnergy, jointColumns, muscleColumns,
+    dt, duration, n, times, joints, jointTypes, muscles: muscleNames, bodies, bodyPositions, bodyQuaternions, positions, restPositions, com, kineticEnergy, potentialEnergy, jointColumns, muscleColumns,
     regionalPower, grf, centerOfPressure, hasCenterOfPressure, contactCount, feet, contacts, wrapPaths,
     validation: { momentArmFdMaxAbsErr, torqueMatchMaxAbsErr },
   };

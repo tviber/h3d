@@ -1,0 +1,26 @@
+{
+  "input": "body-single-blender.glb",
+  "blender": "5.0.1",
+  "meshes": [
+    {
+      "name": "tripo_node_abae682d-fd55-4da9-b15f-c16a674584e8",
+      "vertices": 27979,
+      "faces": 49522,
+      "vertexGroups": 0
+    }
+  ],
+  "armatures": [],
+  "status": "review-required",
+  "bounds": [
+    [
+      -0.0865020751953125,
+      -0.338775634765625,
+      -0.5
+    ],
+    [
+      0.0865020751953125,
+      0.338775634765625,
+      0.5
+    ]
+  ]
+}

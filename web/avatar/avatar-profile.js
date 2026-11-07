@@ -8,7 +8,8 @@
 
 export const MAKEHUMAN_DEFAULT_PROFILE = {
   id: 'makehuman-default',
-  label: 'MakeHuman 默认人模',
+  label: 'MakeHuman 人体',
+  statusLabel: 'MakeHuman CC0',
   glbUrl: '/models/human.glb',
   rigUrl: '/models/rig.json',
   scale: 1.0,
@@ -21,8 +22,9 @@ export const MAKEHUMAN_DEFAULT_PROFILE = {
   /**
    * Canonical skeleton mapping:
    * Maps abstract biomechanical roles to the avatar's actual bone names.
-   * Replacing with another GLB/GLTF/VRM avatar only requires providing a
-   * profile with its own bone names.
+   * This legacy profile is calibrated for MakeHuman. Bone names alone do
+   * not establish compatibility with a different rig or bind pose.
+   * See docs/avatar-retargeting.md for the proposed generic pipeline.
    */
   boneMap: {
     pelvis: 'root',
@@ -127,4 +129,11 @@ export const MAKEHUMAN_DEFAULT_PROFILE = {
 
 export const AVATAR_PROFILES = {
   [MAKEHUMAN_DEFAULT_PROFILE.id]: MAKEHUMAN_DEFAULT_PROFILE,
+  'makehuman-generic': {
+    schemaVersion: 'h3d.avatar-profile.v2', id:'makehuman-generic', label:'MakeHuman · 通用动作', statusLabel:'通用 Humanoid · CC0',
+    asset:{url:'/models/human.glb',license:'CC0'}, rig:{preset:'makehuman',boneOverrides:{}},
+    calibration:{units:'asset',up:'+Y',forward:'+Z',bindPose:'asset'},
+    retarget:{rootMotion:'leg-length-relative',contactPolicy:'source-contact',limbStretch:false},
+    appearance:{materials:'preserve',geometry:'preserve'},
+  },
 };

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "h3d.avatar-profile.v2",
+  "id": "tanjiro-v3",
+  "label": "炭治郎 · 全新制作 v3",
+  "statusLabel": "新资产 · 通用 Humanoid",
+  "asset": {
+    "url": "/models/local/tanjiro-v3.glb",
+    "sha256": "71ea8d13d707052b67c579b484f61a5efb95006f82e76db52c1061f0c179a1b6",
+    "provenance": "assets/avatar-production/tanjiro-v3/production.md",
+    "license": "用户请求角色资产；原作角色版权归权利人"
+  },
+  "rig": {
+    "preset": "mixamo",
+    "boneOverrides": {}
+  },
+  "calibration": {
+    "units": "asset",
+    "up": "+Y",
+    "forward": "+Z",
+    "bindPose": "asset"
+  },
+  "retarget": {
+    "rootMotion": "leg-length-relative",
+    "contactPolicy": "source-contact",
+    "limbStretch": false
+  },
+  "appearance": {
+    "materials": "preserve",
+    "geometry": "preserve"
+  },
+  "collision": {
+    "enabled": true,
+    "clothEnabled": true,
+    "maxCorrectionDegrees": 35,
+    "garments": [
+      { "mesh": "Haori_Body", "pin": { "top": 0.04 } },
+      { "mesh": "Haori_Sleeve_L", "pin": { "alongChain": "leftArm", "fraction": 0.06 } },
+      { "mesh": "Haori_Sleeve_R", "pin": { "alongChain": "rightArm", "fraction": 0.06 } }
+    ]
+  }
+}

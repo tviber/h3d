@@ -1,0 +1,88 @@
+{
+  "asset": {
+    "url": "/models/validation/KayKitKnight.glb",
+    "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "license": "CC0-1.0",
+    "provenance": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47"
+  },
+  "diagnostics": {
+    "ok": true,
+    "schemaVersion": "h3d.avatar-profile.v2",
+    "errors": [],
+    "warnings": [],
+    "skinCount": 6,
+    "ambiguousRoles": [],
+    "missingOptionalRoles": [
+      "leftArm.clavicle",
+      "leftArm.thumb",
+      "leftArm.index",
+      "leftArm.middle",
+      "leftArm.ring",
+      "leftArm.pinky",
+      "rightArm.clavicle",
+      "rightArm.thumb",
+      "rightArm.index",
+      "rightArm.middle",
+      "rightArm.ring",
+      "rightArm.pinky"
+    ],
+    "capabilities": {
+      "torso": true,
+      "arms": true,
+      "legs": true,
+      "fingers": false,
+      "toes": true,
+      "twist": false
+    },
+    "height": 2.4665790247639676,
+    "groundY": 0
+  },
+  "chains": {
+    "leftArm": {
+      "upperLength": 0.24189717297907795,
+      "lowerLength": 0.26004365855510425,
+      "totalLength": 0.5019408315341822
+    },
+    "rightArm": {
+      "upperLength": 0.24189718878225766,
+      "lowerLength": 0.2600436451649204,
+      "totalLength": 0.501940833947178
+    },
+    "leftLeg": {
+      "upperLength": 0.22707746416056215,
+      "lowerLength": 0.14943708333795716,
+      "totalLength": 0.3765145474985193
+    },
+    "rightLeg": {
+      "upperLength": 0.22707746416056276,
+      "lowerLength": 0.14943708333795758,
+      "totalLength": 0.3765145474985203
+    }
+  },
+  "roles": {
+    "pelvis": "hips",
+    "head": "head",
+    "leftArm.upperArm": "upperarml",
+    "leftArm.forearm": "lowerarml",
+    "leftArm.wrist": "wristl",
+    "rightArm.upperArm": "upperarmr",
+    "rightArm.forearm": "lowerarmr",
+    "rightArm.wrist": "wristr",
+    "leftLeg.upperLeg": "upperlegl",
+    "leftLeg.lowerLeg": "lowerlegl",
+    "leftLeg.foot": "footl",
+    "leftLeg.toes": "toesl",
+    "rightLeg.upperLeg": "upperlegr",
+    "rightLeg.lowerLeg": "lowerlegr",
+    "rightLeg.foot": "footr",
+    "rightLeg.toes": "toesr",
+    "spine.0": "spine",
+    "spine.1": "chest"
+  },
+  "geometry": {
+    "skinCount": 1,
+    "meshCount": 15,
+    "animationCount": 76,
+    "rawNodeCount": 57
+  }
+}

@@ -1,0 +1,10 @@
+import type { Object3D } from 'three';
+import type { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import type { HumanoidInspection } from './humanoid-inspector.js';
+import type { HumanoidRetargeter } from './humanoid-retargeter.js';
+export const PROFILE_SCHEMA: 'h3d.avatar-profile.v2';
+export function createHumanoidProfile(id: string, label: string, url?: string): any;
+export function validateHumanoidProfile(profile: any): any;
+export function calibrationReport(inspection: HumanoidInspection, sha256: string): any;
+export function loadAvatarProfile(profile: any, options?: { buffer?: ArrayBuffer; loader?: GLTFLoader; fetchFn?: typeof fetch }): Promise<HumanoidRetargeter & { inspection: HumanoidInspection; report: any }>;
+export function disposeAvatar(model: Object3D): void;

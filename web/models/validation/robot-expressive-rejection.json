@@ -1,0 +1,226 @@
+{
+  "file": "RobotExpressive.glb",
+  "sha256": "047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319",
+  "bytes": 463988,
+  "source": "https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive",
+  "license": "CC0-1.0",
+  "included": false,
+  "reason": "Foot.L and Foot.R are not descendants of the corresponding LowerLeg bones, so the generic two-bone leg IK parent-chain requirement is not satisfied. No source geometry or hierarchy was modified to hide this incompatibility.",
+  "nodes": [
+    {
+      "index": 2,
+      "name": "Bone",
+      "parent": "RobotArmature"
+    },
+    {
+      "index": 3,
+      "name": "Foot.L",
+      "parent": "Bone"
+    },
+    {
+      "index": 6,
+      "name": "Body",
+      "parent": "Bone"
+    },
+    {
+      "index": 8,
+      "name": "Hips",
+      "parent": "Body"
+    },
+    {
+      "index": 9,
+      "name": "Abdomen",
+      "parent": "Hips"
+    },
+    {
+      "index": 10,
+      "name": "Torso",
+      "parent": "Abdomen"
+    },
+    {
+      "index": 11,
+      "name": "Neck",
+      "parent": "Torso"
+    },
+    {
+      "index": 12,
+      "name": "Head",
+      "parent": "Neck"
+    },
+    {
+      "index": 15,
+      "name": "Shoulder.L",
+      "parent": "Torso"
+    },
+    {
+      "index": 17,
+      "name": "UpperArm.L",
+      "parent": "Shoulder.L"
+    },
+    {
+      "index": 19,
+      "name": "LowerArm.L",
+      "parent": "UpperArm.L"
+    },
+    {
+      "index": 20,
+      "name": "Palm2.L",
+      "parent": "LowerArm.L"
+    },
+    {
+      "index": 21,
+      "name": "Middle1.L",
+      "parent": "Palm2.L"
+    },
+    {
+      "index": 22,
+      "name": "Middle2.L",
+      "parent": "Middle1.L"
+    },
+    {
+      "index": 24,
+      "name": "Thumb.L",
+      "parent": "LowerArm.L"
+    },
+    {
+      "index": 25,
+      "name": "Thumb2.L",
+      "parent": "Thumb.L"
+    },
+    {
+      "index": 27,
+      "name": "Palm1.L",
+      "parent": "LowerArm.L"
+    },
+    {
+      "index": 28,
+      "name": "Index.L",
+      "parent": "Palm1.L"
+    },
+    {
+      "index": 29,
+      "name": "Index2.L",
+      "parent": "Index.L"
+    },
+    {
+      "index": 31,
+      "name": "Palm3.L",
+      "parent": "LowerArm.L"
+    },
+    {
+      "index": 32,
+      "name": "Ring1.L",
+      "parent": "Palm3.L"
+    },
+    {
+      "index": 33,
+      "name": "Ring2.L",
+      "parent": "Ring1.L"
+    },
+    {
+      "index": 35,
+      "name": "Shoulder.R",
+      "parent": "Torso"
+    },
+    {
+      "index": 37,
+      "name": "UpperArm.R",
+      "parent": "Shoulder.R"
+    },
+    {
+      "index": 39,
+      "name": "LowerArm.R",
+      "parent": "UpperArm.R"
+    },
+    {
+      "index": 40,
+      "name": "Palm2.R",
+      "parent": "LowerArm.R"
+    },
+    {
+      "index": 41,
+      "name": "Middle1.R",
+      "parent": "Palm2.R"
+    },
+    {
+      "index": 42,
+      "name": "Middle2.R",
+      "parent": "Middle1.R"
+    },
+    {
+      "index": 44,
+      "name": "Thumb.R",
+      "parent": "LowerArm.R"
+    },
+    {
+      "index": 45,
+      "name": "Thumb2.R",
+      "parent": "Thumb.R"
+    },
+    {
+      "index": 47,
+      "name": "Palm1.R",
+      "parent": "LowerArm.R"
+    },
+    {
+      "index": 48,
+      "name": "Index.R",
+      "parent": "Palm1.R"
+    },
+    {
+      "index": 49,
+      "name": "Index2.R",
+      "parent": "Index.R"
+    },
+    {
+      "index": 51,
+      "name": "Palm3.R",
+      "parent": "LowerArm.R"
+    },
+    {
+      "index": 52,
+      "name": "Ring1.R",
+      "parent": "Palm3.R"
+    },
+    {
+      "index": 53,
+      "name": "Ring2.R",
+      "parent": "Ring1.R"
+    },
+    {
+      "index": 55,
+      "name": "UpperLeg.L",
+      "parent": "Body"
+    },
+    {
+      "index": 57,
+      "name": "LowerLeg.L",
+      "parent": "UpperLeg.L"
+    },
+    {
+      "index": 60,
+      "name": "UpperLeg.R",
+      "parent": "Body"
+    },
+    {
+      "index": 62,
+      "name": "LowerLeg.R",
+      "parent": "UpperLeg.R"
+    },
+    {
+      "index": 65,
+      "name": "PoleTarget.L",
+      "parent": "Bone"
+    },
+    {
+      "index": 67,
+      "name": "Foot.R",
+      "parent": "Bone"
+    },
+    {
+      "index": 70,
+      "name": "PoleTarget.R",
+      "parent": "Bone"
+    }
+  ]
+}

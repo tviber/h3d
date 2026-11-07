@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "h3d.avatar-profile.v2",
+  "rig": {
+    "preset": "auto",
+    "boneOverrides": {
+      "pelvis": "hips",
+      "spine": [
+        "spine",
+        "chest"
+      ],
+      "head": "head",
+      "leftArm": {
+        "upperArm": "upperarm.l",
+        "forearm": "lowerarm.l",
+        "wrist": "wrist.l"
+      },
+      "rightArm": {
+        "upperArm": "upperarm.r",
+        "forearm": "lowerarm.r",
+        "wrist": "wrist.r"
+      },
+      "leftLeg": {
+        "upperLeg": "upperleg.l",
+        "lowerLeg": "lowerleg.l",
+        "foot": "foot.l",
+        "toes": "toes.l"
+      },
+      "rightLeg": {
+        "upperLeg": "upperleg.r",
+        "lowerLeg": "lowerleg.r",
+        "foot": "foot.r",
+        "toes": "toes.r"
+      }
+    },
+    "requiredCapabilities": [
+      "torso",
+      "arms",
+      "legs"
+    ]
+  },
+  "calibration": {
+    "units": "asset",
+    "up": "+Y",
+    "forward": "+Z",
+    "bindPose": "asset",
+    "unitScale": 1
+  },
+  "retarget": {
+    "rootMotion": "leg-length-relative",
+    "contactPolicy": "source-contact",
+    "limbStretch": false,
+    "missingFingers": "preserve-bind",
+    "jointLimitsPreset": "humanoid"
+  },
+  "appearance": {
+    "materials": "preserve",
+    "geometry": "preserve"
+  },
+  "id": "kaykit-knight",
+  "label": "KayKit Knight · 短腿比例",
+  "statusLabel": "通用 Humanoid · CC0",
+  "asset": {
+    "url": "/models/validation/KayKitKnight.glb",
+    "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+    "license": "CC0-1.0",
+    "provenance": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47"
+  }
+}

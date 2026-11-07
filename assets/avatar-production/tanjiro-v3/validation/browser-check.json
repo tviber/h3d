@@ -1,0 +1,12 @@
+{
+  "errors": [],
+  "url": "http://127.0.0.1:4173/",
+  "title": "h3d · 人体运动实验室",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "browser": "Chrome headless via Playwright; Browser plugin not available",
+  "clips": 9,
+  "status": "新资产 · 通用 Humanoid"
+}

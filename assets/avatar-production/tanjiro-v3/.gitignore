@@ -1,0 +1,6 @@
+*.blend1
+scripts/__pycache__/
+generated/*-blender.glb
+body-review.blend
+assembled-review.blend
+tanjiro-candidate.glb

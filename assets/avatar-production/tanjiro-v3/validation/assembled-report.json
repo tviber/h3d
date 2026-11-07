@@ -1,0 +1,157 @@
+{
+  "input": "tanjiro-candidate.glb",
+  "blender": "5.0.1",
+  "meshes": [
+    {
+      "name": "Body",
+      "vertices": 27981,
+      "faces": 49522,
+      "vertexGroups": 78
+    },
+    {
+      "name": "Hair",
+      "vertices": 39611,
+      "faces": 13207,
+      "vertexGroups": 78
+    },
+    {
+      "name": "Hanafuda_L",
+      "vertices": 4,
+      "faces": 2,
+      "vertexGroups": 78
+    },
+    {
+      "name": "Hanafuda_R",
+      "vertices": 4,
+      "faces": 2,
+      "vertexGroups": 78
+    },
+    {
+      "name": "Haori_Body",
+      "vertices": 369,
+      "faces": 640,
+      "vertexGroups": 78
+    },
+    {
+      "name": "Haori_Sleeve_L",
+      "vertices": 325,
+      "faces": 576,
+      "vertexGroups": 78
+    },
+    {
+      "name": "Haori_Sleeve_R",
+      "vertices": 325,
+      "faces": 576,
+      "vertexGroups": 78
+    }
+  ],
+  "armatures": [
+    {
+      "name": "Armature",
+      "bones": [
+        "BoneRoot",
+        "Hip",
+        "Pelvis",
+        "L_Thigh",
+        "L_Calf",
+        "L_Foot",
+        "L_ToeBase",
+        "L_CalfTwist01",
+        "L_CalfTwist02",
+        "L_KneeShareBone",
+        "L_ThighTwist01",
+        "L_ThighTwist02",
+        "R_Thigh",
+        "R_Calf",
+        "R_KneeShareBone",
+        "R_Foot",
+        "R_ToeBase",
+        "R_CalfTwist01",
+        "R_CalfTwist02",
+        "R_ThighTwist01",
+        "R_ThighTwist02",
+        "Waist",
+        "Spine01",
+        "Spine02",
+        "NeckTwist01",
+        "NeckTwist02",
+        "Head",
+        "FacialBone",
+        "R_Eye",
+        "L_Eye",
+        "L_Clavicle",
+        "L_Upperarm",
+        "L_Forearm",
+        "L_ForearmTwist01",
+        "L_ForearmTwist02",
+        "L_ElbowShareBone",
+        "L_Hand",
+        "L_Pinky1",
+        "L_Pinky2",
+        "L_Pinky3",
+        "L_Ring1",
+        "L_Ring2",
+        "L_Ring3",
+        "L_Mid1",
+        "L_Mid2",
+        "L_Mid3",
+        "L_Index1",
+        "L_Index2",
+        "L_Index3",
+        "L_Thumb1",
+        "L_Thumb2",
+        "L_Thumb3",
+        "L_UpperarmTwist01",
+        "L_UpperarmTwist02",
+        "R_Clavicle",
+        "R_Upperarm",
+        "R_Forearm",
+        "R_ElbowShareBone",
+        "R_ForearmTwist01",
+        "R_ForearmTwist02",
+        "R_Hand",
+        "R_Ring1",
+        "R_Ring2",
+        "R_Ring3",
+        "R_Mid1",
+        "R_Mid2",
+        "R_Mid3",
+        "R_Thumb1",
+        "R_Thumb2",
+        "R_Thumb3",
+        "R_Index1",
+        "R_Index2",
+        "R_Index3",
+        "R_Pinky1",
+        "R_Pinky2",
+        "R_Pinky3",
+        "R_UpperarmTwist01",
+        "R_UpperarmTwist02"
+      ]
+    }
+  ],
+  "status": "review-required",
+  "bounds": [
+    [
+      -0.558979868888855,
+      -0.1427285522222519,
+      8.301199159177486e-07
+    ],
+    [
+      0.5589797496795654,
+      0.17200003564357758,
+      1.7450004816055298
+    ]
+  ],
+  "animation": "HumanoidValidation",
+  "boneNames": "Mixamo-compatible anatomical roles; Tripo optional helper bones retained",
+  "posed": [
+    "bind",
+    "stand",
+    "arm90",
+    "elbow90",
+    "arms-up",
+    "knee90",
+    "trunk-turn"
+  ]
+}

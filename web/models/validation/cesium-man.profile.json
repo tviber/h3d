@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "h3d.avatar-profile.v2",
+  "rig": {
+    "preset": "auto",
+    "boneOverrides": {
+      "pelvis": "Skeleton_torso_joint_1",
+      "spine": [
+        "Skeleton_torso_joint_2",
+        "torso_joint_3"
+      ],
+      "neck": [
+        "Skeleton_neck_joint_1"
+      ],
+      "head": "Skeleton_neck_joint_2",
+      "leftArm": {
+        "upperArm": "Skeleton_arm_joint_L__4_",
+        "forearm": "Skeleton_arm_joint_L__3_",
+        "wrist": "Skeleton_arm_joint_L__2_"
+      },
+      "rightArm": {
+        "upperArm": "Skeleton_arm_joint_R",
+        "forearm": "Skeleton_arm_joint_R__2_",
+        "wrist": "Skeleton_arm_joint_R__3_"
+      },
+      "leftLeg": {
+        "upperLeg": "leg_joint_L_1",
+        "lowerLeg": "leg_joint_L_2",
+        "foot": "leg_joint_L_3",
+        "toes": "leg_joint_L_5"
+      },
+      "rightLeg": {
+        "upperLeg": "leg_joint_R_1",
+        "lowerLeg": "leg_joint_R_2",
+        "foot": "leg_joint_R_3",
+        "toes": "leg_joint_R_5"
+      }
+    },
+    "requiredCapabilities": [
+      "torso",
+      "arms",
+      "legs"
+    ]
+  },
+  "calibration": {
+    "units": "asset",
+    "up": "+Y",
+    "forward": "+Z",
+    "bindPose": "asset",
+    "unitScale": 1
+  },
+  "retarget": {
+    "rootMotion": "leg-length-relative",
+    "contactPolicy": "source-contact",
+    "limbStretch": false,
+    "missingFingers": "preserve-bind",
+    "jointLimitsPreset": "humanoid"
+  },
+  "appearance": {
+    "materials": "preserve",
+    "geometry": "preserve"
+  },
+  "id": "cesium-man",
+  "label": "CesiumMan · 标准比例",
+  "statusLabel": "通用 Humanoid · CC BY 4.0",
+  "asset": {
+    "url": "/models/validation/CesiumMan.glb",
+    "sha256": "b7001eaeea8254bd44773bcd247e78696d94169388fbb2a1800fc69434e777d9",
+    "license": "CC-BY-4.0",
+    "provenance": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "balanceBefore": 4310,
+  "body": {
+    "model": "v3.1-20260211",
+    "backend": "cli",
+    "face_limit": 50000,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "visibility": "private",
+    "status": "rejected-extra-arms",
+    "taskId": "17a16582-096c-4a78-9521-49f41e94e3e5",
+    "projectId": "5dabac4f-41f8-405c-a2d4-dc01b29f2c40",
+    "actualCredits": 25,
+    "balanceAfterSubmission": 4285,
+    "preRigCheck": {
+      "operatorId": "0dcb7a38-9d86-4556-890e-f62822a63bf3",
+      "riggable": true,
+      "result": "insufficient: visual geometry rejected"
+    },
+    "rejectedGlbsDeleted": true
+  },
+  "rig": {
+    "model": "v3.0-20260909",
+    "backend": "cli",
+    "status": "independent-pose-review-passed",
+    "projectId": "d4f82954-860c-41eb-b814-c55ce3fb5204",
+    "operatorId": "90345140-ddfd-46e9-bdb1-df04e838c107",
+    "actualCredits": 20,
+    "balanceAfter": 4240
+  },
+  "attempts": [
+    {
+      "model": "P2-20260801",
+      "result": "rejected invalid parameter code1004 request6d2e7757-3612-4675-9ec5-8e56a8f6d711",
+      "taskId": null
+    }
+  ],
+  "bodyRetry": {
+    "status": "approved-for-assembly",
+    "input": "references/body-front-master.png",
+    "model": "v3.1-20260211",
+    "face_limit": 50000,
+    "geometry_quality": "standard",
+    "texture_quality": "standard",
+    "taskId": "abae682d-fd55-4da9-b15f-c16a674584e8",
+    "projectId": "d4f82954-860c-41eb-b814-c55ce3fb5204",
+    "actualCredits": 25,
+    "balanceAfter": 4260,
+    "preRigCheck": {
+      "operatorId": "85d934d7-ba2d-4060-b6ef-1feda55384fb",
+      "riggable": true
+    }
+  },
+  "hair": {
+    "taskId": "a2c27a51-523b-4d0e-a283-56a70ffead9e",
+    "projectId": "6ed91fef-ce84-46b9-9572-4da760a009e9",
+    "model": "v3.1-20260211",
+    "face_limit": 16000,
+    "actualCredits": 25,
+    "balanceAfter": 4215,
+    "status": "assembled-and-reviewed"
+  },
+  "final": {
+    "status": "exported-independently-validated-and-registered",
+    "glb": "tanjiro-rigged.glb",
+    "blend": "tanjiro.blend",
+    "sha256": "71ea8d13d707052b67c579b484f61a5efb95006f82e76db52c1061f0c179a1b6",
+    "bytes": 9690032,
+    "bones": 78,
+    "skinnedMeshes": 7,
+    "animation": "HumanoidValidation",
+    "gltfValidator": {
+      "errors": 0,
+      "warnings": 7,
+      "infos": 5
+    },
+    "h3dClips": 9,
+    "samplesPerModel": 1809,
+    "secondModel": "kaykit-knight",
+    "actualTotalCredits": 95,
+    "confirmedBalanceAfter": 4215
+  }
+}

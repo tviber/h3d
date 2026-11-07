@@ -394,6 +394,8 @@ describe('MotionClip and frontend decoupling', async () => {
   it('exports the exact experiment endpoint and all independent viewer channels', async () => {
     const { experiment, recording } = await lowerRun();
     const clip = toMotionClip(experiment, recording);
+    assert.deepEqual(clip.rig.sourceRest?.positions, recording.restPositions);
+    assert.notEqual(clip.rig.sourceRest?.positions, recording.restPositions);
     assert.equal(clip.schemaVersion, 'h3d.motion.v1');
     assert.equal(clip.rig.kind, 'lower-body');
     assert.equal(clip.samples.at(-1)?.time, clip.duration);

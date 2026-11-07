@@ -12,9 +12,10 @@ export interface MotionClip {
   label: string;
   duration: number;
   timestep: number;
+  provenance?: { kind: string; reference?: string; poseId?: string; method?: string };
   phases: MotionPhase[];
   rig: {
-    kind: 'elbow' | 'shoulder-elbow' | 'lower-body';
+    kind: 'elbow' | 'shoulder-elbow' | 'lower-body' | 'authored-humanoid';
     coordinateFrame?: {
       forward: '+x';
       left: '+y';
@@ -23,6 +24,7 @@ export interface MotionClip {
       quaternionOrder: 'wxyz';
     };
     staticPositions: Record<string, Vec3>;
+    sourceRest?: { provenance: string; positions: Record<string, Vec3> };
     segments: { from: string; to: string; radius: number; group: 'torso' | 'arm' | 'leg' }[];
     bodies?: RigidBodySpec[];
     jointNames: string[];
@@ -31,6 +33,7 @@ export interface MotionClip {
   };
   samples: {
     time: number;
+    pose?: Record<string, number>;
     com: Vec3;
     positions: Record<string, Vec3>;
     bodies?: Record<string, RigidBodyPose>;
@@ -145,6 +148,7 @@ export function toMotionClip(experiment: MuscleExperiment, recording: MuscleReco
         quaternionOrder: 'wxyz',
       },
       staticPositions: STATIC_POSITIONS,
+      sourceRest: { provenance: 'MuJoCo sites at model reference pose before initialPoseRad', positions: structuredClone(recording.restPositions) },
       segments: experiment.rig.kind === 'lower-body' ? LOWER_BODY_SEGMENTS : BASE_SEGMENTS,
       bodies: recording.bodies,
       jointNames: recording.joints,
